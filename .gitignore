@@ -1,0 +1,4 @@
+node_modules/
+.mint/
+.env*
+.DS_Store

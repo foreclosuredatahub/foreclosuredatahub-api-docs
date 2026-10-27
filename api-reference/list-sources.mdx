@@ -1,0 +1,61 @@
+---
+title: "List sources"
+description: "List all available data sources with their coverage and supported filters. coverage is one of national (all US states), regional (a subset of states), state (one state), or county (one county). states lists the USPS codes covered; it is null for national feeds and for regional feeds whose footprint varies - query /v1/properties/data with the state filter to enumerate those."
+openapi: "GET /api/v1/sources"
+---
+
+List all available data sources with their coverage and supported filters. coverage is one of national (all US states), regional (a subset of states), state (one state), or county (one county). states lists the USPS codes covered; it is null for national feeds and for regional feeds whose footprint varies - query /v1/properties/data with the state filter to enumerate those.
+
+## Parameters
+
+This endpoint has no query parameters.
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -H "x-api-key: fdh_ak_your_key_here" \
+  https://www.foreclosuredatahub.com/api/v1/sources
+```
+
+```javascript JavaScript
+const res = await fetch(
+  "https://www.foreclosuredatahub.com/api/v1/sources",
+  { headers: { "x-api-key": "fdh_ak_your_key_here" } }
+);
+const data = await res.json();
+```
+
+```python Python
+import requests
+
+res = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/sources",
+    headers={"x-api-key": "fdh_ak_your_key_here"}
+)
+data = res.json()
+```
+
+</CodeGroup>
+
+## Response shape
+
+Illustrative response; `...` represents omitted fields or records.
+
+```json
+{
+  "data": [
+    {
+      "id": "feed-01",
+      "name": "Data Feed 01",
+      "coverage": "regional",
+      "states": ["AL", "AZ", "CA", "..."],
+      "filters": { "county": true, "state": true, "sale_date": true, "owner_name": true, "est_value": true }
+    },
+    ...
+  ]
+}
+```
+
+See [response fields](/concepts/responses), [quotas](/concepts/rate-limits), and [error handling](/concepts/errors).

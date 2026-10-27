@@ -1,0 +1,19 @@
+---
+title: "Search preforeclosures"
+description: "Find listings with scheduled upcoming sales."
+---
+
+Set `pre_foreclosure=true` (or `1`) and include a location filter: `county`, `state`, `zip`, or `address`.
+
+```bash
+curl -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/properties/search?mode=unified&state=FL&pre_foreclosure=true&page_size=5"
+```
+
+This matches the dashboard filter: sale date today or later in UTC, excluding REO-only feeds and REO asset types. Listings without a known sale date, including early-stage defaults, are excluded.
+
+`false` and `0` disable the filter. Other values return `400`.
+
+In unified mode, `sale_days` adds minimum lead time of 1–365 days. It combines with `sale_date_start` and `sale_date_end`. On its own, `sale_days` retains listings without a parsed date; combining it with `pre_foreclosure=true` excludes those undated listings.
+
+Use `sale_status` to narrow canonical status groups in unified mode. Scheduled sale dates can change; check the record's latest status and source evidence before acting on a listing.

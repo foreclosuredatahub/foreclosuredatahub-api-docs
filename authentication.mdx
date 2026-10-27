@@ -1,0 +1,23 @@
+---
+title: "Authentication"
+description: "Authenticate requests with your API key."
+---
+
+Pass your API key in the `x-api-key` header on every request. Generate and manage retail keys in [API settings](https://www.foreclosuredatahub.com/dashboard/api).
+
+```bash
+curl -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/sources"
+```
+
+Keep keys in server-side environment variables. Do not put a key in a public repository, browser bundle, or URL query string.
+
+## Retail access
+
+Eligible Pro and Business subscriptions include API access. Starter does not. New Pro and Business trials include **30 total API requests**, at most **10 property rows per response**, and **500 delivered rows shared with CSV and Google Sheets**. Every trial API endpoint counts toward the request cap, including sources and counts.
+
+## Commercial access
+
+Use a commercial license for showing records to your own customers. Manage commercial access in the [license dashboard](https://www.foreclosuredatahub.com/dashboard/license). Commercial evaluations and paid licenses have their own call and response limits. See [licensing](/guides/licensing).
+
+Missing or invalid keys return `401`. Inactive subscriptions or ineligible plans return `403`.

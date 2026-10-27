@@ -1,0 +1,742 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Foreclosure Data Hub API",
+    "version": "1.0.0",
+    "description": "Public REST API. At least one location filter is required for search. Quotas depend on account and license status."
+  },
+  "servers": [
+    {
+      "url": "https://www.foreclosuredatahub.com"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/api/v1/sources": {
+      "get": {
+        "operationId": "list_sources",
+        "summary": "List sources",
+        "description": "List all available data sources with their coverage and supported filters. coverage is one of national (all US states), regional (a subset of states), state (one state), or county (one county). states lists the USPS codes covered; it is null for national feeds and for regional feeds whose footprint varies - query /v1/properties/data with the state filter to enumerate those.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response. The data shape depends on the endpoint and search mode.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {},
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access or quota restriction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown endpoint",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/properties/search": {
+      "get": {
+        "operationId": "search_properties",
+        "summary": "Search properties",
+        "description": "Search across all data sources simultaneously. Paid retail requests return up to 100 rows total across all source groups; new trials return up to 10. Groups after the limit contain counts and empty records. At least one location filter (county, state, zip, or address) is required.",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Total listing rows across all groups: 1–100 paid or 1–10 during a new trial. Defaults to 25 when paid or 10 during a new trial. Choose a value within your remaining allowance.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "description": "Use unified for one records array with consistent field names, including source, row_id, nullable owner_first_name / owner_last_name, and file_number where supplied. The default groups source-specific records by feed.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "unified"
+              ]
+            }
+          },
+          {
+            "name": "county",
+            "in": "query",
+            "required": false,
+            "description": "County name filter. Can specify multiple (e.g., county=Cook&county=Lake).",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "description": "State name or abbreviation. Can specify multiple.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "zip",
+            "in": "query",
+            "required": false,
+            "description": "Zip code filter. Can specify multiple.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "address",
+            "in": "query",
+            "required": false,
+            "description": "Property address filter (partial match). Can specify multiple.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "pre_foreclosure",
+            "in": "query",
+            "required": false,
+            "description": "Set true or 1 for scheduled-sale preforeclosures: sale date today or later (UTC), excluding REO-only feeds and REO asset types. Matches the dashboard filter. Listings without a known sale date, including early-stage defaults, are excluded. false or 0 disables the filter (default); other values return 400. A location filter is still required.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sale_date_start",
+            "in": "query",
+            "required": false,
+            "description": "Filter by sale date start (YYYY-MM-DD).",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "sale_date_end",
+            "in": "query",
+            "required": false,
+            "description": "Filter by sale date end (YYYY-MM-DD).",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "owner_name",
+            "in": "query",
+            "required": false,
+            "description": "Owner name filter (partial match on first or last name). Only applied to sources that expose owner fields.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "est_value_min",
+            "in": "query",
+            "required": false,
+            "description": "Minimum estimated value (Market Valuation). Only applied to sources with an estimated value field.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "est_value_max",
+            "in": "query",
+            "required": false,
+            "description": "Maximum estimated value (Market Valuation). Only applied to sources with an estimated value field.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "sale_days",
+            "in": "query",
+            "required": false,
+            "description": "Minimum lead time: sale_date_parsed must be later than today + N days (integer 1-365, unbounded above). ANDs with sale_date_start/sale_date_end. Listings without a parsed sale date stay included — an unscheduled sale cannot violate the bound. Unified mode only.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "sale_status",
+            "in": "query",
+            "required": false,
+            "description": "Canonical sale-status group: active, coming-soon, for-sale, postponed, cancelled, price-reduced, back-to-bank, new-listing, sold, mortgage-foreclosure, outbid, preview, pending, hard-to-sell, nos, vacant-lot, sale-held, none. Groups merge clearly-equivalent feed statuses — e.g. cancelled covers Cancelled/WITHDRAWN/Sale Invalid, sold covers Sold/Completed/3rd-party variants, postponed covers postpone*/On Hold. none matches listings with no reported status. Unified mode only.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page number (default: 1).",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "description": "Results per page, 1–100 for paid keys or 1–10 for new trials. Defaults to 25 paid or 10 during a trial. Your remaining allowance may lower an omitted first-page size.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response. The data shape depends on the endpoint and search mode.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {},
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access or quota restriction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown endpoint",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/properties/data": {
+      "get": {
+        "operationId": "single_source_data",
+        "summary": "Get source data",
+        "description": "Fetch paginated data from a single source. Max 100 records per page when paid, or 10 during a new trial. Defaults to 25 when paid or 10 during a new trial.",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "query",
+            "required": true,
+            "description": "Data source ID (from /v1/sources).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page number (default: 1).",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "Results per page, 1–100 paid or 1–10 during a new trial. Defaults to 25 when paid or 10 during a new trial.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "description": "Filter by date added start (YYYY-MM-DD).",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "description": "Filter by date added end (YYYY-MM-DD).",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "county",
+            "in": "query",
+            "required": false,
+            "description": "County name filter.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "description": "State name or abbreviation.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "owner_name",
+            "in": "query",
+            "required": false,
+            "description": "Owner name filter (partial match on first or last name). Only applied when the source exposes owner fields.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "est_value_min",
+            "in": "query",
+            "required": false,
+            "description": "Minimum estimated value (Market Valuation). Only applied when the source exposes an estimated value field.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "est_value_max",
+            "in": "query",
+            "required": false,
+            "description": "Maximum estimated value (Market Valuation). Only applied when the source exposes an estimated value field.",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response. The data shape depends on the endpoint and search mode.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {},
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access or quota restriction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown endpoint",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/properties/counts": {
+      "get": {
+        "operationId": "record_counts",
+        "summary": "Get record counts",
+        "description": "Get record counts per data source for a date or date range.",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "description": "Single date (YYYY-MM-DD). Defaults to today.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "description": "Range start (YYYY-MM-DD). Use with end_date.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "description": "Range end (YYYY-MM-DD). Use with start_date.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response. The data shape depends on the endpoint and search mode.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {},
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access or quota restriction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown endpoint",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  }
+}

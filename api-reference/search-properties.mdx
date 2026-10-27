@@ -1,0 +1,83 @@
+---
+title: "Search properties"
+description: "Search across all data sources simultaneously. Paid retail requests return up to 100 rows total across all source groups; new trials return up to 10. Groups after the limit contain counts and empty records. At least one location filter (county, state, zip, or address) is required."
+openapi: "GET /api/v1/properties/search"
+---
+
+Search across all data sources simultaneously. Paid retail requests return up to 100 rows total across all source groups; new trials return up to 10. Groups after the limit contain counts and empty records. At least one location filter (county, state, zip, or address) is required.
+
+## Parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `limit` | integer | No | Total listing rows across all groups: 1–100 paid or 1–10 during a new trial. Defaults to 25 when paid or 10 during a new trial. Choose a value within your remaining allowance. |
+| `mode` | string | No | Use unified for one records array with consistent field names, including source, row_id, nullable owner_first_name / owner_last_name, and file_number where supplied. The default groups source-specific records by feed. |
+| `county` | string | No | County name filter. Can specify multiple (e.g., county=Cook&county=Lake). |
+| `state` | string | No | State name or abbreviation. Can specify multiple. |
+| `zip` | string | No | Zip code filter. Can specify multiple. |
+| `address` | string | No | Property address filter (partial match). Can specify multiple. |
+| `pre_foreclosure` | boolean | No | Set true or 1 for scheduled-sale preforeclosures: sale date today or later (UTC), excluding REO-only feeds and REO asset types. Matches the dashboard filter. Listings without a known sale date, including early-stage defaults, are excluded. false or 0 disables the filter (default); other values return 400. A location filter is still required. |
+| `sale_date_start` | date | No | Filter by sale date start (YYYY-MM-DD). |
+| `sale_date_end` | date | No | Filter by sale date end (YYYY-MM-DD). |
+| `owner_name` | string | No | Owner name filter (partial match on first or last name). Only applied to sources that expose owner fields. |
+| `est_value_min` | number | No | Minimum estimated value (Market Valuation). Only applied to sources with an estimated value field. |
+| `est_value_max` | number | No | Maximum estimated value (Market Valuation). Only applied to sources with an estimated value field. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -H "x-api-key: fdh_ak_..." \
+  "https://www.foreclosuredatahub.com/api/v1/properties/search?state=FL&county=Miami-Dade"
+```
+
+```javascript JavaScript
+const params = new URLSearchParams({
+  state: "FL",
+  county: "Miami-Dade",
+});
+
+const res = await fetch(
+  `https://www.foreclosuredatahub.com/api/v1/properties/search?${params}`,
+  { headers: { "x-api-key": "fdh_ak_..." } }
+);
+const data = await res.json();
+```
+
+```python Python
+import requests
+
+res = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/properties/search",
+    headers={"x-api-key": "fdh_ak_..."},
+    params={"state": "FL", "county": "Miami-Dade"}
+)
+data = res.json()
+```
+
+</CodeGroup>
+
+## Response shape
+
+Illustrative response; `...` represents omitted fields or records.
+
+```json
+{
+  "data": {
+    "results": [
+      {
+        "source": "feed-01",
+        "source_name": "Data Feed 01",
+        "records": [ { "source": "feed-01", "row_id": "listing-record-id", ... }, ... ],
+        "count": 45,
+        "has_more": false
+      },
+      ...
+    ]
+  },
+  "meta": { "total": 312 }
+}
+```
+
+See [response fields](/concepts/responses), [quotas](/concepts/rate-limits), and [error handling](/concepts/errors).

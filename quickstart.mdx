@@ -1,0 +1,36 @@
+---
+title: "Quickstart"
+description: "Make your first authenticated request in minutes."
+---
+
+<Steps>
+<Step title="Create an API key">
+Open [API settings](https://www.foreclosuredatahub.com/dashboard/api). Retail API access requires an eligible Pro or Business subscription. For a customer-facing product, use a [commercial license](https://www.foreclosuredatahub.com/data-licensing).
+
+Store your key in a server-side environment variable:
+
+```bash
+export FDH_API_KEY="fdh_ak_your_key_here"
+```
+</Step>
+<Step title="Discover available sources">
+```bash
+curl --fail-with-body \
+  -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/sources"
+```
+Use the returned source IDs and coverage metadata. Do not assume a particular feed is available in every county.
+</Step>
+<Step title="Search a small page of listings">
+```bash
+curl --fail-with-body \
+  -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/properties/search?mode=unified&state=FL&page_size=5"
+```
+The response includes `data.records` and pagination in `meta`. Five rows fits the per-response limits of both paid and new trial keys, provided your remaining allowance is sufficient.
+</Step>
+</Steps>
+
+<Warning>Each new property request, including a retry, can consume rows again. Check the response and quota headers before retrying.</Warning>
+
+Continue with [pagination](/guides/pagination) or [preforeclosure search](/guides/preforeclosure-search).

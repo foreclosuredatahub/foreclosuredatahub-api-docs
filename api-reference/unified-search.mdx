@@ -1,0 +1,109 @@
+---
+title: "Unified search"
+description: "Search with mode=unified to get normalized, paginated results across all sources in a single flat list. Each record includes standardized fields (address, city, state, zip, county, sale_date, bid_amount, owner name, etc.) with a source field indicating origin."
+---
+
+Search with mode=unified to get normalized, paginated results across all sources in a single flat list. Each record includes standardized fields (address, city, state, zip, county, sale_date, bid_amount, owner name, etc.) with a source field indicating origin.
+
+Use the search endpoint with `mode=unified`. At least one location filter is required.
+
+## Parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `mode` | string | Yes | Set to "unified" to enable unified mode. |
+| `county` | string | No | County name filter. Can specify multiple. |
+| `state` | string | No | State name or abbreviation. Can specify multiple. |
+| `zip` | string | No | Zip code filter. Can specify multiple. |
+| `address` | string | No | Property address filter (partial match). Can specify multiple. |
+| `pre_foreclosure` | boolean | No | Set true or 1 for scheduled-sale preforeclosures: sale date today or later (UTC), excluding REO-only feeds and REO asset types. Matches the dashboard filter. Listings without a known sale date, including early-stage defaults, are excluded. false or 0 disables the filter (default); other values return 400. A location filter is still required. |
+| `sale_date_start` | date | No | Filter by sale date start (YYYY-MM-DD). |
+| `sale_date_end` | date | No | Filter by sale date end (YYYY-MM-DD). |
+| `sale_days` | integer | No | Minimum lead time: sale_date_parsed must be later than today + N days (integer 1-365, unbounded above). ANDs with sale_date_start/sale_date_end. Listings without a parsed sale date stay included — an unscheduled sale cannot violate the bound. Unified mode only. |
+| `sale_status` | string | No | Canonical sale-status group: active, coming-soon, for-sale, postponed, cancelled, price-reduced, back-to-bank, new-listing, sold, mortgage-foreclosure, outbid, preview, pending, hard-to-sell, nos, vacant-lot, sale-held, none. Groups merge clearly-equivalent feed statuses — e.g. cancelled covers Cancelled/WITHDRAWN/Sale Invalid, sold covers Sold/Completed/3rd-party variants, postponed covers postpone*/On Hold. none matches listings with no reported status. Unified mode only. |
+| `owner_name` | string | No | Owner name filter (partial match on first or last name). |
+| `est_value_min` | number | No | Minimum estimated value (Market Valuation). Uses the unified zestimate_numeric column. |
+| `est_value_max` | number | No | Maximum estimated value (Market Valuation). Uses the unified zestimate_numeric column. |
+| `page` | integer | No | Page number (default: 1). |
+| `page_size` | integer | No | Results per page, 1–100 for paid keys or 1–10 for new trials. Defaults to 25 paid or 10 during a trial. Your remaining allowance may lower an omitted first-page size. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -H "x-api-key: fdh_ak_..." \
+  "https://www.foreclosuredatahub.com/api/v1/properties/search?mode=unified&state=FL&pre_foreclosure=true&page=1&page_size=25"
+```
+
+```javascript JavaScript
+const params = new URLSearchParams({
+  mode: "unified",
+  state: "FL",
+  pre_foreclosure: "true",
+  page: "1",
+  page_size: "25",
+});
+
+const res = await fetch(
+  `https://www.foreclosuredatahub.com/api/v1/properties/search?${params}`,
+  { headers: { "x-api-key": "fdh_ak_..." } }
+);
+const data = await res.json();
+```
+
+```python Python
+import requests
+
+res = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/properties/search",
+    headers={"x-api-key": "fdh_ak_..."},
+    params={
+        "mode": "unified",
+        "state": "FL",
+        "pre_foreclosure": "true",
+        "page": 1,
+        "page_size": 25
+    }
+)
+data = res.json()
+```
+
+</CodeGroup>
+
+## Response shape
+
+Illustrative response; `...` represents omitted fields or records.
+
+```json
+{
+  "data": {
+    "records": [
+      {
+        "source": "feed-01",
+        "address": "123 Main St",
+        "city": "Miami",
+        "state": "FL",
+        "zip": "33101",
+        "county": "Miami-Dade",
+        "sale_date": "2026-04-15",
+        "sale_status": "Postponed",
+        "sale_status_group": "postponed",
+        "bid_amount": "250000",
+        "owner_first_name": "John",
+        "owner_last_name": "Doe",
+        ...
+      },
+      ...
+    ]
+  },
+  "meta": {
+    "total": 1250,
+    "page": 1,
+    "per_page": 25,
+    "total_pages": 50
+  }
+}
+```
+
+See [response fields](/concepts/responses), [quotas](/concepts/rate-limits), and [error handling](/concepts/errors).

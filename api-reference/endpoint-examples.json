@@ -1,0 +1,311 @@
+[
+  {
+    "id": "list-sources",
+    "method": "GET",
+    "path": "/v1/sources",
+    "description": "List all available data sources with their coverage and supported filters. coverage is one of national (all US states), regional (a subset of states), state (one state), or county (one county). states lists the USPS codes covered; it is null for national feeds and for regional feeds whose footprint varies - query /v1/properties/data with the state filter to enumerate those.",
+    "params": [],
+    "examples": {
+      "curl": "curl -H \"x-api-key: fdh_ak_your_key_here\" \\\n  https://www.foreclosuredatahub.com/api/v1/sources",
+      "javascript": "const res = await fetch(\n  \"https://www.foreclosuredatahub.com/api/v1/sources\",\n  { headers: { \"x-api-key\": \"fdh_ak_your_key_here\" } }\n);\nconst data = await res.json();",
+      "python": "import requests\n\nres = requests.get(\n    \"https://www.foreclosuredatahub.com/api/v1/sources\",\n    headers={\"x-api-key\": \"fdh_ak_your_key_here\"}\n)\ndata = res.json()"
+    },
+    "response": "{\n  \"data\": [\n    {\n      \"id\": \"feed-01\",\n      \"name\": \"Data Feed 01\",\n      \"coverage\": \"regional\",\n      \"states\": [\"AL\", \"AZ\", \"CA\", \"...\"],\n      \"filters\": { \"county\": true, \"state\": true, \"sale_date\": true, \"owner_name\": true, \"est_value\": true }\n    },\n    ...\n  ]\n}"
+  },
+  {
+    "id": "search-properties",
+    "method": "GET",
+    "path": "/v1/properties/search",
+    "description": "Search across all data sources simultaneously. Paid retail requests return up to 100 rows total across all source groups; new trials return up to 10. Groups after the limit contain counts and empty records. At least one location filter (county, state, zip, or address) is required.",
+    "params": [
+      {
+        "name": "limit",
+        "type": "integer",
+        "required": false,
+        "description": "Total listing rows across all groups: 1–100 paid or 1–10 during a new trial. Defaults to 25 when paid or 10 during a new trial. Choose a value within your remaining allowance."
+      },
+      {
+        "name": "mode",
+        "type": "string",
+        "required": false,
+        "description": "Use unified for one records array with consistent field names, including source, row_id, nullable owner_first_name / owner_last_name, and file_number where supplied. The default groups source-specific records by feed."
+      },
+      {
+        "name": "county",
+        "type": "string",
+        "required": false,
+        "description": "County name filter. Can specify multiple (e.g., county=Cook&county=Lake)."
+      },
+      {
+        "name": "state",
+        "type": "string",
+        "required": false,
+        "description": "State name or abbreviation. Can specify multiple."
+      },
+      {
+        "name": "zip",
+        "type": "string",
+        "required": false,
+        "description": "Zip code filter. Can specify multiple."
+      },
+      {
+        "name": "address",
+        "type": "string",
+        "required": false,
+        "description": "Property address filter (partial match). Can specify multiple."
+      },
+      {
+        "name": "pre_foreclosure",
+        "type": "boolean",
+        "required": false,
+        "description": "Set true or 1 for scheduled-sale preforeclosures: sale date today or later (UTC), excluding REO-only feeds and REO asset types. Matches the dashboard filter. Listings without a known sale date, including early-stage defaults, are excluded. false or 0 disables the filter (default); other values return 400. A location filter is still required."
+      },
+      {
+        "name": "sale_date_start",
+        "type": "date",
+        "required": false,
+        "description": "Filter by sale date start (YYYY-MM-DD)."
+      },
+      {
+        "name": "sale_date_end",
+        "type": "date",
+        "required": false,
+        "description": "Filter by sale date end (YYYY-MM-DD)."
+      },
+      {
+        "name": "owner_name",
+        "type": "string",
+        "required": false,
+        "description": "Owner name filter (partial match on first or last name). Only applied to sources that expose owner fields."
+      },
+      {
+        "name": "est_value_min",
+        "type": "number",
+        "required": false,
+        "description": "Minimum estimated value (Market Valuation). Only applied to sources with an estimated value field."
+      },
+      {
+        "name": "est_value_max",
+        "type": "number",
+        "required": false,
+        "description": "Maximum estimated value (Market Valuation). Only applied to sources with an estimated value field."
+      }
+    ],
+    "examples": {
+      "curl": "curl -H \"x-api-key: fdh_ak_...\" \\\n  \"https://www.foreclosuredatahub.com/api/v1/properties/search?state=FL&county=Miami-Dade\"",
+      "javascript": "const params = new URLSearchParams({\n  state: \"FL\",\n  county: \"Miami-Dade\",\n});\n\nconst res = await fetch(\n  `https://www.foreclosuredatahub.com/api/v1/properties/search?${params}`,\n  { headers: { \"x-api-key\": \"fdh_ak_...\" } }\n);\nconst data = await res.json();",
+      "python": "import requests\n\nres = requests.get(\n    \"https://www.foreclosuredatahub.com/api/v1/properties/search\",\n    headers={\"x-api-key\": \"fdh_ak_...\"},\n    params={\"state\": \"FL\", \"county\": \"Miami-Dade\"}\n)\ndata = res.json()"
+    },
+    "response": "{\n  \"data\": {\n    \"results\": [\n      {\n        \"source\": \"feed-01\",\n        \"source_name\": \"Data Feed 01\",\n        \"records\": [ { \"source\": \"feed-01\", \"row_id\": \"listing-record-id\", ... }, ... ],\n        \"count\": 45,\n        \"has_more\": false\n      },\n      ...\n    ]\n  },\n  \"meta\": { \"total\": 312 }\n}"
+  },
+  {
+    "id": "unified-search",
+    "method": "GET",
+    "path": "/v1/properties/search?mode=unified",
+    "description": "Search with mode=unified to get normalized, paginated results across all sources in a single flat list. Each record includes standardized fields (address, city, state, zip, county, sale_date, bid_amount, owner name, etc.) with a source field indicating origin.",
+    "params": [
+      {
+        "name": "mode",
+        "type": "string",
+        "required": true,
+        "description": "Set to \"unified\" to enable unified mode."
+      },
+      {
+        "name": "county",
+        "type": "string",
+        "required": false,
+        "description": "County name filter. Can specify multiple."
+      },
+      {
+        "name": "state",
+        "type": "string",
+        "required": false,
+        "description": "State name or abbreviation. Can specify multiple."
+      },
+      {
+        "name": "zip",
+        "type": "string",
+        "required": false,
+        "description": "Zip code filter. Can specify multiple."
+      },
+      {
+        "name": "address",
+        "type": "string",
+        "required": false,
+        "description": "Property address filter (partial match). Can specify multiple."
+      },
+      {
+        "name": "pre_foreclosure",
+        "type": "boolean",
+        "required": false,
+        "description": "Set true or 1 for scheduled-sale preforeclosures: sale date today or later (UTC), excluding REO-only feeds and REO asset types. Matches the dashboard filter. Listings without a known sale date, including early-stage defaults, are excluded. false or 0 disables the filter (default); other values return 400. A location filter is still required."
+      },
+      {
+        "name": "sale_date_start",
+        "type": "date",
+        "required": false,
+        "description": "Filter by sale date start (YYYY-MM-DD)."
+      },
+      {
+        "name": "sale_date_end",
+        "type": "date",
+        "required": false,
+        "description": "Filter by sale date end (YYYY-MM-DD)."
+      },
+      {
+        "name": "sale_days",
+        "type": "integer",
+        "required": false,
+        "description": "Minimum lead time: sale_date_parsed must be later than today + N days (integer 1-365, unbounded above). ANDs with sale_date_start/sale_date_end. Listings without a parsed sale date stay included — an unscheduled sale cannot violate the bound. Unified mode only."
+      },
+      {
+        "name": "sale_status",
+        "type": "string",
+        "required": false,
+        "description": "Canonical sale-status group: active, coming-soon, for-sale, postponed, cancelled, price-reduced, back-to-bank, new-listing, sold, mortgage-foreclosure, outbid, preview, pending, hard-to-sell, nos, vacant-lot, sale-held, none. Groups merge clearly-equivalent feed statuses — e.g. cancelled covers Cancelled/WITHDRAWN/Sale Invalid, sold covers Sold/Completed/3rd-party variants, postponed covers postpone*/On Hold. none matches listings with no reported status. Unified mode only."
+      },
+      {
+        "name": "owner_name",
+        "type": "string",
+        "required": false,
+        "description": "Owner name filter (partial match on first or last name)."
+      },
+      {
+        "name": "est_value_min",
+        "type": "number",
+        "required": false,
+        "description": "Minimum estimated value (Market Valuation). Uses the unified zestimate_numeric column."
+      },
+      {
+        "name": "est_value_max",
+        "type": "number",
+        "required": false,
+        "description": "Maximum estimated value (Market Valuation). Uses the unified zestimate_numeric column."
+      },
+      {
+        "name": "page",
+        "type": "integer",
+        "required": false,
+        "description": "Page number (default: 1)."
+      },
+      {
+        "name": "page_size",
+        "type": "integer",
+        "required": false,
+        "description": "Results per page, 1–100 for paid keys or 1–10 for new trials. Defaults to 25 paid or 10 during a trial. Your remaining allowance may lower an omitted first-page size."
+      }
+    ],
+    "examples": {
+      "curl": "curl -H \"x-api-key: fdh_ak_...\" \\\n  \"https://www.foreclosuredatahub.com/api/v1/properties/search?mode=unified&state=FL&pre_foreclosure=true&page=1&page_size=25\"",
+      "javascript": "const params = new URLSearchParams({\n  mode: \"unified\",\n  state: \"FL\",\n  pre_foreclosure: \"true\",\n  page: \"1\",\n  page_size: \"25\",\n});\n\nconst res = await fetch(\n  `https://www.foreclosuredatahub.com/api/v1/properties/search?${params}`,\n  { headers: { \"x-api-key\": \"fdh_ak_...\" } }\n);\nconst data = await res.json();",
+      "python": "import requests\n\nres = requests.get(\n    \"https://www.foreclosuredatahub.com/api/v1/properties/search\",\n    headers={\"x-api-key\": \"fdh_ak_...\"},\n    params={\n        \"mode\": \"unified\",\n        \"state\": \"FL\",\n        \"pre_foreclosure\": \"true\",\n        \"page\": 1,\n        \"page_size\": 25\n    }\n)\ndata = res.json()"
+    },
+    "response": "{\n  \"data\": {\n    \"records\": [\n      {\n        \"source\": \"feed-01\",\n        \"address\": \"123 Main St\",\n        \"city\": \"Miami\",\n        \"state\": \"FL\",\n        \"zip\": \"33101\",\n        \"county\": \"Miami-Dade\",\n        \"sale_date\": \"2026-04-15\",\n        \"sale_status\": \"Postponed\",\n        \"sale_status_group\": \"postponed\",\n        \"bid_amount\": \"250000\",\n        \"owner_first_name\": \"John\",\n        \"owner_last_name\": \"Doe\",\n        ...\n      },\n      ...\n    ]\n  },\n  \"meta\": {\n    \"total\": 1250,\n    \"page\": 1,\n    \"per_page\": 25,\n    \"total_pages\": 50\n  }\n}"
+  },
+  {
+    "id": "single-source-data",
+    "method": "GET",
+    "path": "/v1/properties/data",
+    "description": "Fetch paginated data from a single source. Max 100 records per page when paid, or 10 during a new trial. Defaults to 25 when paid or 10 during a new trial.",
+    "params": [
+      {
+        "name": "source",
+        "type": "string",
+        "required": true,
+        "description": "Data source ID (from /v1/sources)."
+      },
+      {
+        "name": "page",
+        "type": "integer",
+        "required": false,
+        "description": "Page number (default: 1)."
+      },
+      {
+        "name": "per_page",
+        "type": "integer",
+        "required": false,
+        "description": "Results per page, 1–100 paid or 1–10 during a new trial. Defaults to 25 when paid or 10 during a new trial."
+      },
+      {
+        "name": "start_date",
+        "type": "date",
+        "required": false,
+        "description": "Filter by date added start (YYYY-MM-DD)."
+      },
+      {
+        "name": "end_date",
+        "type": "date",
+        "required": false,
+        "description": "Filter by date added end (YYYY-MM-DD)."
+      },
+      {
+        "name": "county",
+        "type": "string",
+        "required": false,
+        "description": "County name filter."
+      },
+      {
+        "name": "state",
+        "type": "string",
+        "required": false,
+        "description": "State name or abbreviation."
+      },
+      {
+        "name": "owner_name",
+        "type": "string",
+        "required": false,
+        "description": "Owner name filter (partial match on first or last name). Only applied when the source exposes owner fields."
+      },
+      {
+        "name": "est_value_min",
+        "type": "number",
+        "required": false,
+        "description": "Minimum estimated value (Market Valuation). Only applied when the source exposes an estimated value field."
+      },
+      {
+        "name": "est_value_max",
+        "type": "number",
+        "required": false,
+        "description": "Maximum estimated value (Market Valuation). Only applied when the source exposes an estimated value field."
+      }
+    ],
+    "examples": {
+      "curl": "curl -H \"x-api-key: fdh_ak_...\" \\\n  \"https://www.foreclosuredatahub.com/api/v1/properties/data?source=feed-01&state=TX&per_page=25\"",
+      "javascript": "const params = new URLSearchParams({\n  source: \"feed-01\",\n  state: \"TX\",\n  per_page: \"25\",\n});\n\nconst res = await fetch(\n  `https://www.foreclosuredatahub.com/api/v1/properties/data?${params}`,\n  { headers: { \"x-api-key\": \"fdh_ak_...\" } }\n);\nconst data = await res.json();",
+      "python": "import requests\n\nres = requests.get(\n    \"https://www.foreclosuredatahub.com/api/v1/properties/data\",\n    headers={\"x-api-key\": \"fdh_ak_...\"},\n    params={\"source\": \"feed-01\", \"state\": \"TX\", \"per_page\": 25}\n)\ndata = res.json()"
+    },
+    "response": "{\n  \"data\": [\n    { \"Address\": \"123 Main St\", \"County\": \"Harris\", ... },\n    ...\n  ],\n  \"meta\": {\n    \"total\": 1250,\n    \"page\": 1,\n    \"per_page\": 25,\n    \"total_pages\": 50\n  }\n}"
+  },
+  {
+    "id": "record-counts",
+    "method": "GET",
+    "path": "/v1/properties/counts",
+    "description": "Get record counts per data source for a date or date range.",
+    "params": [
+      {
+        "name": "date",
+        "type": "date",
+        "required": false,
+        "description": "Single date (YYYY-MM-DD). Defaults to today."
+      },
+      {
+        "name": "start_date",
+        "type": "date",
+        "required": false,
+        "description": "Range start (YYYY-MM-DD). Use with end_date."
+      },
+      {
+        "name": "end_date",
+        "type": "date",
+        "required": false,
+        "description": "Range end (YYYY-MM-DD). Use with start_date."
+      }
+    ],
+    "examples": {
+      "curl": "curl -H \"x-api-key: fdh_ak_...\" \\\n  \"https://www.foreclosuredatahub.com/api/v1/properties/counts?start_date=2026-03-15&end_date=2026-03-22\"",
+      "javascript": "const params = new URLSearchParams({\n  start_date: \"2026-03-15\",\n  end_date: \"2026-03-22\",\n});\n\nconst res = await fetch(\n  `https://www.foreclosuredatahub.com/api/v1/properties/counts?${params}`,\n  { headers: { \"x-api-key\": \"fdh_ak_...\" } }\n);\nconst data = await res.json();",
+      "python": "import requests\n\nres = requests.get(\n    \"https://www.foreclosuredatahub.com/api/v1/properties/counts\",\n    headers={\"x-api-key\": \"fdh_ak_...\"},\n    params={\"start_date\": \"2026-03-15\", \"end_date\": \"2026-03-22\"}\n)\ndata = res.json()"
+    },
+    "response": "{\n  \"data\": {\n    \"start_date\": \"2026-03-15\",\n    \"end_date\": \"2026-03-22\",\n    \"sources\": [\n      {\n        \"id\": \"feed-01\",\n        \"name\": \"Data Feed 01\",\n        \"count\": 523\n      },\n      ...\n    ],\n    \"total\": 4821\n  }\n}"
+  }
+]

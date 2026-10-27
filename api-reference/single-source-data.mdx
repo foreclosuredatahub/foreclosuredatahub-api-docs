@@ -1,0 +1,79 @@
+---
+title: "Get source data"
+description: "Fetch paginated data from a single source. Max 100 records per page when paid, or 10 during a new trial. Defaults to 25 when paid or 10 during a new trial."
+openapi: "GET /api/v1/properties/data"
+---
+
+Fetch paginated data from a single source. Max 100 records per page when paid, or 10 during a new trial. Defaults to 25 when paid or 10 during a new trial.
+
+## Parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `source` | string | Yes | Data source ID (from /v1/sources). |
+| `page` | integer | No | Page number (default: 1). |
+| `per_page` | integer | No | Results per page, 1–100 paid or 1–10 during a new trial. Defaults to 25 when paid or 10 during a new trial. |
+| `start_date` | date | No | Filter by date added start (YYYY-MM-DD). |
+| `end_date` | date | No | Filter by date added end (YYYY-MM-DD). |
+| `county` | string | No | County name filter. |
+| `state` | string | No | State name or abbreviation. |
+| `owner_name` | string | No | Owner name filter (partial match on first or last name). Only applied when the source exposes owner fields. |
+| `est_value_min` | number | No | Minimum estimated value (Market Valuation). Only applied when the source exposes an estimated value field. |
+| `est_value_max` | number | No | Maximum estimated value (Market Valuation). Only applied when the source exposes an estimated value field. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -H "x-api-key: fdh_ak_..." \
+  "https://www.foreclosuredatahub.com/api/v1/properties/data?source=feed-01&state=TX&per_page=25"
+```
+
+```javascript JavaScript
+const params = new URLSearchParams({
+  source: "feed-01",
+  state: "TX",
+  per_page: "25",
+});
+
+const res = await fetch(
+  `https://www.foreclosuredatahub.com/api/v1/properties/data?${params}`,
+  { headers: { "x-api-key": "fdh_ak_..." } }
+);
+const data = await res.json();
+```
+
+```python Python
+import requests
+
+res = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/properties/data",
+    headers={"x-api-key": "fdh_ak_..."},
+    params={"source": "feed-01", "state": "TX", "per_page": 25}
+)
+data = res.json()
+```
+
+</CodeGroup>
+
+## Response shape
+
+Illustrative response; `...` represents omitted fields or records.
+
+```json
+{
+  "data": [
+    { "Address": "123 Main St", "County": "Harris", ... },
+    ...
+  ],
+  "meta": {
+    "total": 1250,
+    "page": 1,
+    "per_page": 25,
+    "total_pages": 50
+  }
+}
+```
+
+See [response fields](/concepts/responses), [quotas](/concepts/rate-limits), and [error handling](/concepts/errors).

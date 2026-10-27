@@ -1,0 +1,21 @@
+---
+title: "Errors and retries"
+description: "Handle authentication, validation, quota, and service errors."
+---
+
+| Status | Meaning | Action |
+| --- | --- | --- |
+| 400 | Invalid or missing parameters | Check location filters, source ID, dates, and page size. |
+| 401 | Missing or invalid API key | Check the `x-api-key` header and active key. |
+| 403 | Plan, license, trial, or row allowance restriction | Check the error code and dashboard usage. |
+| 404 | Unknown API endpoint | Verify the endpoint path. Empty queries normally return a successful empty result. |
+| 429 | Request rate limit | Respect `Retry-After` before retrying. |
+| 500 / 503 | Service failure or temporary unavailability | Retry cautiously with backoff; retain `X-Request-ID` for support. |
+
+```json
+{"error":"At least one filter required: county, state, zip, or address"}
+```
+
+For `EXPORT_QUOTA_EXCEEDED`, request fewer rows or wait for the stated reset. Do not repeatedly retry an unchanged oversized request. Each new property request can consume rows again if the previous response was prepared but delivery could not be confirmed.
+
+Contact [support](https://www.foreclosuredatahub.com/contact) with the request ID and endpoint. Do not send your API key.

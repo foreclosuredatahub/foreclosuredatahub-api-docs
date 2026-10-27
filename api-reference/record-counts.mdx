@@ -1,0 +1,74 @@
+---
+title: "Get record counts"
+description: "Get record counts per data source for a date or date range."
+openapi: "GET /api/v1/properties/counts"
+---
+
+Get record counts per data source for a date or date range.
+
+## Parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `date` | date | No | Single date (YYYY-MM-DD). Defaults to today. |
+| `start_date` | date | No | Range start (YYYY-MM-DD). Use with end_date. |
+| `end_date` | date | No | Range end (YYYY-MM-DD). Use with start_date. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -H "x-api-key: fdh_ak_..." \
+  "https://www.foreclosuredatahub.com/api/v1/properties/counts?start_date=2026-03-15&end_date=2026-03-22"
+```
+
+```javascript JavaScript
+const params = new URLSearchParams({
+  start_date: "2026-03-15",
+  end_date: "2026-03-22",
+});
+
+const res = await fetch(
+  `https://www.foreclosuredatahub.com/api/v1/properties/counts?${params}`,
+  { headers: { "x-api-key": "fdh_ak_..." } }
+);
+const data = await res.json();
+```
+
+```python Python
+import requests
+
+res = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/properties/counts",
+    headers={"x-api-key": "fdh_ak_..."},
+    params={"start_date": "2026-03-15", "end_date": "2026-03-22"}
+)
+data = res.json()
+```
+
+</CodeGroup>
+
+## Response shape
+
+Illustrative response; `...` represents omitted fields or records.
+
+```json
+{
+  "data": {
+    "start_date": "2026-03-15",
+    "end_date": "2026-03-22",
+    "sources": [
+      {
+        "id": "feed-01",
+        "name": "Data Feed 01",
+        "count": 523
+      },
+      ...
+    ],
+    "total": 4821
+  }
+}
+```
+
+See [response fields](/concepts/responses), [quotas](/concepts/rate-limits), and [error handling](/concepts/errors).

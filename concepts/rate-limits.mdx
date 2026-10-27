@@ -1,0 +1,41 @@
+---
+title: "Rate limits and allowances"
+description: "Understand request limits, row delivery, and retry behavior."
+---
+
+## Retail request limits
+
+All retail keys on an account share these limits:
+
+| Endpoint | Limit |
+| --- | --- |
+| Search | 15 requests/minute |
+| Source data | 30 requests/minute |
+| Counts | 15 requests/minute |
+| Sources | 10 requests/minute |
+| All endpoints combined | 1,000 requests/hour |
+| New trial | 30 requests total |
+
+Exceeding a rate limit returns `429` with `Retry-After`.
+
+## Retail row allowances
+
+Pro includes **10,000 rows/month**. Business includes **30,000 shared rows/month** and five people. CSV, Google Sheets, and API property responses share the account's row allowance. Unused rows do not roll over.
+
+Paid property responses return at most **100 rows**, defaulting to 25. New trial responses return at most **10 rows**, shared with the trial's **500 delivered rows**. Sources and counts consume requests but do not consume listing rows.
+
+On the first page, an omitted size may be reduced to the remaining balance. Explicit sizes are never silently reduced. A request above your allowance returns `403 EXPORT_QUOTA_EXCEEDED` with the remaining rows and reset date; request a smaller count explicitly.
+
+Successful property responses include:
+
+- `X-Export-Quota-Limit`
+- `X-Export-Quota-Remaining`
+- `X-Export-Quota-Reset` (Unix seconds)
+
+View current usage in [Settings → Subscription](https://www.foreclosuredatahub.com/dashboard/settings/subscription).
+
+<Warning>Rows are charged immediately before sending the prepared response. Every new request, including a retry, can consume rows again. If delivery is uncertain, check the result before sending another request.</Warning>
+
+## Commercial limits
+
+Commercial evaluations allow **50 successful calls total over three days**, **10 records per response**, and **10 requests/minute**. They do not reset monthly or convert automatically, and no card is required. Paid commercial licenses use separate monthly call allowances and allow at most 100 records per response. See [commercial licensing](https://www.foreclosuredatahub.com/data-licensing) for current tiers.

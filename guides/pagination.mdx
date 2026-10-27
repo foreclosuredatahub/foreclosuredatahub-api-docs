@@ -1,0 +1,18 @@
+---
+title: "Pagination and filtering"
+description: "Retrieve bounded pages without exhausting your allowance."
+---
+
+| Mode | Page | Page size | Response rows |
+| --- | --- | --- | --- |
+| Unified search | `page` | `page_size` | `data.records` |
+| Single source | `page` | `per_page` | `data` |
+| Grouped search | No page parameter | `limit` | `data.results[].records` |
+
+Page numbering starts at 1. Use `meta.total_pages` to stop paginated requests. Grouped search applies one total row budget across all source groups; later groups may have a count and no rows. Use unified search or single-source data to paginate.
+
+Retail paid responses allow up to 100 rows, defaulting to 25; new trials allow up to 10. Use a smaller explicit size when your remaining allowance is low. Commercial response limits depend on license status.
+
+Search accepts repeated location parameters, such as `county=Cook&county=Lake`. At least one location filter is required. Source-data filters apply only when supported by the chosen source; discover support with [List sources](/api-reference/list-sources).
+
+The `limit` alias can also bound paginated requests. If you supply it together with `page_size` or `per_page`, use matching values; conflicting limits return `400`.

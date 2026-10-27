@@ -1,0 +1,53 @@
+---
+title: "Responses and property fields"
+description: "Read response envelopes, listing identities, and enrichment fields."
+---
+
+Successful responses contain `data` and optional `meta`. Errors contain an `error` message and may include a machine-readable code or quota details.
+
+```json
+{"data":{"records":[]},"meta":{"total":0,"page":1,"per_page":5,"total_pages":0}}
+```
+
+## Listing identity
+
+Retain `source`, `row_id`, and the response's `X-Request-ID` header for reconciliation and support. These identify listing records, not unique parcels. Grouped search and source-data responses preserve source-specific field names. Use `mode=unified` for consistent fields.
+
+`file_number` is a feed reference when supplied. It may be an asset or trustee reference rather than a court case number. Missing references and unresolved owner names are `null`.
+
+## Sale status
+
+Unified listings include the source's `sale_status` and a normalized `sale_status_group`. Filter by the canonical group with `sale_status` in unified mode. Missing reported statuses can be selected with `sale_status=none`.
+
+## Enrichment
+
+Assessor and public-record enrichment is best effort and runs after ingest. Older listings and some feeds omit these fields. Treat enrichment fields as optional and nullable. Internal processing markers are not returned.
+
+| Unified field | By-source enrichment field | Meaning |
+| --- | --- | --- |
+| `building_type` | `enrichment.building_type` | Building profile |
+| `build_quality` | `enrichment.build_quality` | Reported quality |
+| `num_bedrooms` | `enrichment.bedrooms` | Bedroom count as reported |
+| `living_sqft` | `enrichment.living_sqft` | Living area as reported |
+| `assessor_year_built` | `enrichment.year_built` | Assessor year built |
+| `land_use` | `enrichment.property_type` | Assessor land use |
+| `last_sold_price` | `enrichment.last_sold_price` | Last recorded sale price |
+| `last_sold_date` | `enrichment.last_sold_date` | Last recorded sale date |
+| `mortgage_amount` | `enrichment.loan_amount` | Original recorded loan principal |
+| `mortgage_date` | `enrichment.loan_origination_date` | Loan origination date |
+| `mortgage_term` | `enrichment.loan_term` | Reported loan term |
+| `mortgage_maturity_date` | `enrichment.loan_maturity_date` | Loan maturity date |
+
+Raw enrichment can also include `building_sqft` and `actual_year_built`. Numeric variants such as `zestimate_numeric`, `last_sold_price_numeric`, and `mortgage_amount_numeric` are available in unified responses where populated.
+
+<Note>The raw source column `Mortgage amount due` holds the loan maturity **date**. `enrichment.loan_maturity_date` exposes the same value under a clearer name.</Note>
+
+## Lender identity
+
+`lender_name` is nullable and comes from source mortgage text or explicitly identified parties in notices matched to the property and sale event. It reports the mortgage party in that evidence; it does not independently establish today's loan owner or servicer. Ambiguous or unresolved values are `null`. The source mortgage may differ from the assessor loan represented by `mortgage_amount`.
+
+Raw by-source records include `Lender Name` where captured. Unified responses also include lender names recovered through notice matching.
+
+## Estimated equity
+
+`estimated_equity` is available in unified responses. It is estimated value minus the original recorded loan principal. It ignores principal paid down and secondary liens, can be negative, and is not a payoff figure.

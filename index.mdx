@@ -1,0 +1,47 @@
+---
+title: "Foreclosure Data Hub documentation"
+description: "Build with foreclosure, auction, and property data."
+---
+
+Use the Foreclosure Data Hub REST API to discover data sources, search listings, retrieve source records, and track record counts.
+
+<Info>API base URL: `https://www.foreclosuredatahub.com/api/v1`. Documentation hosting does not change your API keys or endpoint URLs.</Info>
+
+<CardGroup cols={2}>
+  <Card title="Make your first request" icon="bolt" href="/quickstart">Create an API key and query a small set of listings.</Card>
+  <Card title="API reference" icon="code" href="/api-reference/search-properties">Explore parameters, responses, and code examples.</Card>
+  <Card title="Sources and coverage" icon="database" href="/api-reference/list-sources">Discover available feeds and supported filters.</Card>
+  <Card title="Commercial integrations" icon="building" href="/guides/licensing">Understand internal use and customer-facing integrations.</Card>
+</CardGroup>
+
+## Overview
+
+The API uses HTTPS, JSON responses, and an `x-api-key` header. Retail API access is available on eligible Pro and Business subscriptions; Starter does not include API access. Commercial licenses use separate keys and allowances.
+
+## Authentication
+
+Generate a key in [API settings](https://www.foreclosuredatahub.com/dashboard/api), then follow the [authentication guide](/authentication).
+
+## Rate limits
+
+Review [rate limits and row allowances](/concepts/rate-limits) before sending requests. API property responses share retail row allowances with CSV and Google Sheets exports.
+
+## Response format
+
+Keep each listing's `source` and `row_id` for reconciliation. See the [response field guide](/concepts/responses).
+
+## Endpoints
+
+- [List sources](/api-reference/list-sources)
+- [Search properties](/api-reference/search-properties)
+- [Unified search](/api-reference/unified-search)
+- [Get source data](/api-reference/single-source-data)
+- [Get record counts](/api-reference/record-counts)
+
+## Preforeclosure search
+
+[Search scheduled-sale preforeclosures](/guides/preforeclosure-search) with `pre_foreclosure=true` and a location filter.
+
+## Errors
+
+See [error handling](/concepts/errors) for invalid parameters, authentication, quota errors, and retries.

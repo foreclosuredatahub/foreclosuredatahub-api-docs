@@ -1,0 +1,124 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "Foreclosure Data Hub",
+  "description": "REST API documentation for foreclosure, auction, and property data.",
+  "theme": "almond",
+  "colors": {
+    "primary": "#009866",
+    "light": "#34D399",
+    "dark": "#007D54"
+  },
+  "logo": {
+    "light": "/logo/foreclosuredatahub-light.svg",
+    "dark": "/logo/foreclosuredatahub-dark.svg",
+    "href": "https://www.foreclosuredatahub.com"
+  },
+  "favicon": "/logo/favicon.ico",
+  "fonts": {
+    "family": "Inter"
+  },
+  "api": {
+    "openapi": "openapi/foreclosuredatahub-v1.json",
+    "playground": {
+      "display": "interactive",
+      "proxy": false
+    },
+    "examples": {
+      "languages": [
+        "curl",
+        "python",
+        "javascript"
+      ],
+      "defaults": "required",
+      "prefill": true,
+      "autogenerate": true
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Get started",
+            "pages": [
+              "index",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core concepts",
+            "pages": [
+              "concepts/rate-limits",
+              "concepts/responses",
+              "concepts/errors"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/preforeclosure-search",
+              "guides/pagination",
+              "guides/licensing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "icon": "code",
+        "groups": [
+          {
+            "group": "Resources",
+            "pages": [
+              "api-reference/list-sources",
+              "api-reference/search-properties",
+              "api-reference/unified-search",
+              "api-reference/single-source-data",
+              "api-reference/record-counts"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "GitHub",
+        "href": "https://github.com/foreclosuredatahub/foreclosuredatahub-api-docs"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Get API key",
+      "href": "https://www.foreclosuredatahub.com/dashboard/api"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/foreclosuredatahub/foreclosuredatahub-api-docs"
+    },
+    "links": [
+      {
+        "heading": "Foreclosure Data Hub",
+        "items": [
+          {
+            "label": "Website",
+            "href": "https://www.foreclosuredatahub.com"
+          },
+          {
+            "label": "Data licensing",
+            "href": "https://www.foreclosuredatahub.com/data-licensing"
+          },
+          {
+            "label": "Contact",
+            "href": "https://www.foreclosuredatahub.com/contact"
+          }
+        ]
+      }
+    ]
+  }
+}
