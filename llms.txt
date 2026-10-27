@@ -1,0 +1,24 @@
+# Foreclosure Data Hub
+
+> REST API documentation for foreclosure, auction, and property data.
+
+## Documentation
+
+- [Foreclosure Data Hub documentation](https://www.foreclosuredatahub.com/docs/index.md): Build with foreclosure, auction, and property data.
+- [Quickstart](https://www.foreclosuredatahub.com/docs/quickstart.md): Make your first authenticated request in minutes.
+- [Authentication](https://www.foreclosuredatahub.com/docs/authentication.md): Authenticate requests with your API key.
+- [Rate limits and allowances](https://www.foreclosuredatahub.com/docs/concepts/rate-limits.md): Understand request limits, row delivery, and retry behavior.
+- [Responses and property fields](https://www.foreclosuredatahub.com/docs/concepts/responses.md): Read response envelopes, listing identities, and enrichment fields.
+- [Errors and retries](https://www.foreclosuredatahub.com/docs/concepts/errors.md): Handle authentication, validation, quota, and service errors.
+- [Search preforeclosures](https://www.foreclosuredatahub.com/docs/guides/preforeclosure-search.md): Find listings with scheduled upcoming sales.
+- [Pagination and filtering](https://www.foreclosuredatahub.com/docs/guides/pagination.md): Retrieve bounded pages without exhausting your allowance.
+- [Commercial integrations](https://www.foreclosuredatahub.com/docs/guides/licensing.md): Choose access for internal workflows or customer-facing products.
+- [List sources](https://www.foreclosuredatahub.com/docs/api-reference/list-sources.md): Discover available feeds, coverage, and supported filters.
+- [Search properties](https://www.foreclosuredatahub.com/docs/api-reference/search-properties.md): Search listings across sources with grouped or unified responses.
+- [Unified search](https://www.foreclosuredatahub.com/docs/api-reference/unified-search.md): Search with mode=unified to get normalized, paginated results across all sources in a single flat list. Each record includes standardized fields (address, city, state, zip, county, sale_date, bid_amount, owner name, etc.) with a source field indicating origin.
+- [Get source data](https://www.foreclosuredatahub.com/docs/api-reference/single-source-data.md): Retrieve a paginated set of listings from one source.
+- [Get record counts](https://www.foreclosuredatahub.com/docs/api-reference/record-counts.md): Count listings by source within a date range.
+
+## API specification
+
+- [OpenAPI](https://www.foreclosuredatahub.com/docs/openapi/foreclosuredatahub-v1.json)

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://www.foreclosuredatahub.com/docs</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/quickstart</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/authentication</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/concepts/rate-limits</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/concepts/responses</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/concepts/errors</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/guides/preforeclosure-search</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/guides/pagination</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/guides/licensing</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/list-sources</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/search-properties</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/unified-search</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/single-source-data</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/record-counts</loc></url>
+</urlset>

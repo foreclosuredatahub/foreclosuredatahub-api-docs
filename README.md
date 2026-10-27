@@ -10,6 +10,8 @@ Following Reclip's separate docs repository: docs.json controls branding and nav
 
 Run npm ci and npm run validate. Use npx mint dev for local preview, npx mint validate and npx mint broken-links for platform validation.
 
+After changing navigation or page content, run `npm run generate:indexes`. The custom sitemap and AI indexes use the public canonical domain for subpath hosting. Validation checks that these generated files match the current content.
+
 ## Hosting
 
 Connect this repository's main branch, root directory /, in Mintlify. Configure www.foreclosuredatahub.com with the Host at subpath set to docs. The application proxies /docs and Mintlify's supporting asset routes. API endpoints stay at https://www.foreclosuredatahub.com/api/v1. /api-docs redirects permanently to /docs.

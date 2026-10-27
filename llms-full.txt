@@ -1,0 +1,727 @@
+# Foreclosure Data Hub
+
+> REST API documentation for foreclosure, auction, and property data.
+
+## Foreclosure Data Hub documentation
+
+Source: https://www.foreclosuredatahub.com/docs
+
+Build with foreclosure, auction, and property data.
+
+Use the Foreclosure Data Hub REST API to discover data sources, search listings, retrieve source records, and track record counts.
+
+<Info>API base URL: `https://www.foreclosuredatahub.com/api/v1`. Documentation hosting does not change your API keys or endpoint URLs.</Info>
+
+<CardGroup cols={2}>
+  <Card title="Make your first request" icon="bolt" href="/quickstart">Create an API key and query a small set of listings.</Card>
+  <Card title="API reference" icon="code" href="/api-reference/search-properties">Explore parameters, responses, and code examples.</Card>
+  <Card title="Sources and coverage" icon="database" href="/api-reference/list-sources">Discover available feeds and supported filters.</Card>
+  <Card title="Commercial integrations" icon="building" href="/guides/licensing">Understand internal use and customer-facing integrations.</Card>
+</CardGroup>
+
+## Overview
+
+The API uses HTTPS, JSON responses, and an `x-api-key` header. Retail API access is available on eligible Pro and Business subscriptions; Starter does not include API access. Commercial licenses use separate keys and allowances.
+
+## Authentication
+
+Generate a key in [API settings](https://www.foreclosuredatahub.com/dashboard/api), then follow the [authentication guide](/authentication).
+
+## Rate limits
+
+Review [rate limits and row allowances](/concepts/rate-limits) before sending requests. API property responses share retail row allowances with CSV and Google Sheets exports.
+
+## Response format
+
+Keep each listing's `source` and `row_id` for reconciliation. See the [response field guide](/concepts/responses).
+
+## Endpoints
+
+- [List sources](/api-reference/list-sources)
+- [Search properties](/api-reference/search-properties)
+- [Unified search](/api-reference/unified-search)
+- [Get source data](/api-reference/single-source-data)
+- [Get record counts](/api-reference/record-counts)
+
+## Preforeclosure search
+
+[Search scheduled-sale preforeclosures](/guides/preforeclosure-search) with `pre_foreclosure=true` and a location filter.
+
+## Errors
+
+See [error handling](/concepts/errors) for invalid parameters, authentication, quota errors, and retries.
+
+---
+
+## Quickstart
+
+Source: https://www.foreclosuredatahub.com/docs/quickstart
+
+Make your first authenticated request in minutes.
+
+<Steps>
+<Step title="Create an API key">
+Open [API settings](https://www.foreclosuredatahub.com/dashboard/api). Retail API access requires an eligible Pro or Business subscription. For a customer-facing product, use a [commercial license](https://www.foreclosuredatahub.com/data-licensing).
+
+Store your key in a server-side environment variable:
+
+```bash
+export FDH_API_KEY="fdh_ak_your_key_here"
+```
+</Step>
+<Step title="Discover available sources">
+```bash
+curl --fail-with-body \
+  -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/sources"
+```
+Use the returned source IDs and coverage metadata. Do not assume a particular feed is available in every county.
+</Step>
+<Step title="Search a small page of listings">
+```bash
+curl --fail-with-body \
+  -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/properties/search?mode=unified&state=FL&page_size=5"
+```
+The response includes `data.records` and pagination in `meta`. Five rows fits the per-response limits of both paid and new trial keys, provided your remaining allowance is sufficient.
+</Step>
+</Steps>
+
+<Warning>Each new property request, including a retry, can consume rows again. Check the response and quota headers before retrying.</Warning>
+
+Continue with [pagination](/guides/pagination) or [preforeclosure search](/guides/preforeclosure-search).
+
+---
+
+## Authentication
+
+Source: https://www.foreclosuredatahub.com/docs/authentication
+
+Authenticate requests with your API key.
+
+Pass your API key in the `x-api-key` header on every request. Generate and manage retail keys in [API settings](https://www.foreclosuredatahub.com/dashboard/api).
+
+```bash
+curl -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/sources"
+```
+
+Keep keys in server-side environment variables. Do not put a key in a public repository, browser bundle, or URL query string.
+
+## Retail access
+
+Eligible Pro and Business subscriptions include API access. Starter does not. New Pro and Business trials include **30 total API requests**, at most **10 property rows per response**, and **500 delivered rows shared with CSV and Google Sheets**. Every trial API endpoint counts toward the request cap, including sources and counts.
+
+## Commercial access
+
+Use a commercial license for showing records to your own customers. Manage commercial access in the [license dashboard](https://www.foreclosuredatahub.com/dashboard/license). Commercial evaluations and paid licenses have their own call and response limits. See [licensing](/guides/licensing).
+
+Missing or invalid keys return `401`. Inactive subscriptions or ineligible plans return `403`.
+
+---
+
+## Rate limits and allowances
+
+Source: https://www.foreclosuredatahub.com/docs/concepts/rate-limits
+
+Understand request limits, row delivery, and retry behavior.
+
+## Retail request limits
+
+All retail keys on an account share these limits:
+
+| Endpoint | Limit |
+| --- | --- |
+| Search | 15 requests/minute |
+| Source data | 30 requests/minute |
+| Counts | 15 requests/minute |
+| Sources | 10 requests/minute |
+| All endpoints combined | 1,000 requests/hour |
+| New trial | 30 requests total |
+
+Exceeding a rate limit returns `429` with `Retry-After`.
+
+## Retail row allowances
+
+Pro includes **10,000 rows/month**. Business includes **30,000 shared rows/month** and five people. CSV, Google Sheets, and API property responses share the account's row allowance. Unused rows do not roll over.
+
+Paid property responses return at most **100 rows**, defaulting to 25. New trial responses return at most **10 rows**, shared with the trial's **500 delivered rows**. Sources and counts consume requests but do not consume listing rows.
+
+On the first page, an omitted size may be reduced to the remaining balance. Explicit sizes are never silently reduced. A request above your allowance returns `403 EXPORT_QUOTA_EXCEEDED` with the remaining rows and reset date; request a smaller count explicitly.
+
+Successful property responses include:
+
+- `X-Export-Quota-Limit`
+- `X-Export-Quota-Remaining`
+- `X-Export-Quota-Reset` (Unix seconds)
+
+View current usage in [Settings → Subscription](https://www.foreclosuredatahub.com/dashboard/settings/subscription).
+
+<Warning>Rows are charged immediately before sending the prepared response. Every new request, including a retry, can consume rows again. If delivery is uncertain, check the result before sending another request.</Warning>
+
+## Commercial limits
+
+Commercial evaluations allow **50 successful calls total over three days**, **10 records per response**, and **10 requests/minute**. They do not reset monthly or convert automatically, and no card is required. Paid commercial licenses use separate monthly call allowances and allow at most 100 records per response. See [commercial licensing](https://www.foreclosuredatahub.com/data-licensing) for current tiers.
+
+---
+
+## Responses and property fields
+
+Source: https://www.foreclosuredatahub.com/docs/concepts/responses
+
+Read response envelopes, listing identities, and enrichment fields.
+
+Successful responses contain `data` and optional `meta`. Errors contain an `error` message and may include a machine-readable code or quota details.
+
+```json
+{"data":{"records":[]},"meta":{"total":0,"page":1,"per_page":5,"total_pages":0}}
+```
+
+## Listing identity
+
+Retain `source`, `row_id`, and the response's `X-Request-ID` header for reconciliation and support. These identify listing records, not unique parcels. Grouped search and source-data responses preserve source-specific field names. Use `mode=unified` for consistent fields.
+
+`file_number` is a feed reference when supplied. It may be an asset or trustee reference rather than a court case number. Missing references and unresolved owner names are `null`.
+
+## Sale status
+
+Unified listings include the source's `sale_status` and a normalized `sale_status_group`. Filter by the canonical group with `sale_status` in unified mode. Missing reported statuses can be selected with `sale_status=none`.
+
+## Enrichment
+
+Assessor and public-record enrichment is best effort and runs after ingest. Older listings and some feeds omit these fields. Treat enrichment fields as optional and nullable. Internal processing markers are not returned.
+
+| Unified field | By-source enrichment field | Meaning |
+| --- | --- | --- |
+| `building_type` | `enrichment.building_type` | Building profile |
+| `build_quality` | `enrichment.build_quality` | Reported quality |
+| `num_bedrooms` | `enrichment.bedrooms` | Bedroom count as reported |
+| `living_sqft` | `enrichment.living_sqft` | Living area as reported |
+| `assessor_year_built` | `enrichment.year_built` | Assessor year built |
+| `land_use` | `enrichment.property_type` | Assessor land use |
+| `last_sold_price` | `enrichment.last_sold_price` | Last recorded sale price |
+| `last_sold_date` | `enrichment.last_sold_date` | Last recorded sale date |
+| `mortgage_amount` | `enrichment.loan_amount` | Original recorded loan principal |
+| `mortgage_date` | `enrichment.loan_origination_date` | Loan origination date |
+| `mortgage_term` | `enrichment.loan_term` | Reported loan term |
+| `mortgage_maturity_date` | `enrichment.loan_maturity_date` | Loan maturity date |
+
+Raw enrichment can also include `building_sqft` and `actual_year_built`. Numeric variants such as `zestimate_numeric`, `last_sold_price_numeric`, and `mortgage_amount_numeric` are available in unified responses where populated.
+
+<Note>The raw source column `Mortgage amount due` holds the loan maturity **date**. `enrichment.loan_maturity_date` exposes the same value under a clearer name.</Note>
+
+## Lender identity
+
+`lender_name` is nullable and comes from source mortgage text or explicitly identified parties in notices matched to the property and sale event. It reports the mortgage party in that evidence; it does not independently establish today's loan owner or servicer. Ambiguous or unresolved values are `null`. The source mortgage may differ from the assessor loan represented by `mortgage_amount`.
+
+Raw by-source records include `Lender Name` where captured. Unified responses also include lender names recovered through notice matching.
+
+## Estimated equity
+
+`estimated_equity` is available in unified responses. It is estimated value minus the original recorded loan principal. It ignores principal paid down and secondary liens, can be negative, and is not a payoff figure.
+
+---
+
+## Errors and retries
+
+Source: https://www.foreclosuredatahub.com/docs/concepts/errors
+
+Handle authentication, validation, quota, and service errors.
+
+| Status | Meaning | Action |
+| --- | --- | --- |
+| 400 | Invalid or missing parameters | Check location filters, source ID, dates, and page size. |
+| 401 | Missing or invalid API key | Check the `x-api-key` header and active key. |
+| 403 | Plan, license, trial, or row allowance restriction | Check the error code and dashboard usage. |
+| 404 | Unknown API endpoint | Verify the endpoint path. Empty queries normally return a successful empty result. |
+| 429 | Request rate limit | Respect `Retry-After` before retrying. |
+| 500 / 503 | Service failure or temporary unavailability | Retry cautiously with backoff; retain `X-Request-ID` for support. |
+
+```json
+{"error":"At least one filter required: county, state, zip, or address"}
+```
+
+For `EXPORT_QUOTA_EXCEEDED`, request fewer rows or wait for the stated reset. Do not repeatedly retry an unchanged oversized request. Each new property request can consume rows again if the previous response was prepared but delivery could not be confirmed.
+
+Contact [support](https://www.foreclosuredatahub.com/contact) with the request ID and endpoint. Do not send your API key.
+
+---
+
+## Search preforeclosures
+
+Source: https://www.foreclosuredatahub.com/docs/guides/preforeclosure-search
+
+Find listings with scheduled upcoming sales.
+
+Set `pre_foreclosure=true` (or `1`) and include a location filter: `county`, `state`, `zip`, or `address`.
+
+```bash
+curl -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/properties/search?mode=unified&state=FL&pre_foreclosure=true&page_size=5"
+```
+
+This matches the dashboard filter: sale date today or later in UTC, excluding REO-only feeds and REO asset types. Listings without a known sale date, including early-stage defaults, are excluded.
+
+`false` and `0` disable the filter. Other values return `400`.
+
+In unified mode, `sale_days` adds minimum lead time of 1–365 days. It combines with `sale_date_start` and `sale_date_end`. On its own, `sale_days` retains listings without a parsed date; combining it with `pre_foreclosure=true` excludes those undated listings.
+
+Use `sale_status` to narrow canonical status groups in unified mode. Scheduled sale dates can change; check the record's latest status and source evidence before acting on a listing.
+
+---
+
+## Pagination and filtering
+
+Source: https://www.foreclosuredatahub.com/docs/guides/pagination
+
+Retrieve bounded pages without exhausting your allowance.
+
+| Mode | Page | Page size | Response rows |
+| --- | --- | --- | --- |
+| Unified search | `page` | `page_size` | `data.records` |
+| Single source | `page` | `per_page` | `data` |
+| Grouped search | No page parameter | `limit` | `data.results[].records` |
+
+Page numbering starts at 1. Use `meta.total_pages` to stop paginated requests. Grouped search applies one total row budget across all source groups; later groups may have a count and no rows. Use unified search or single-source data to paginate.
+
+Retail paid responses allow up to 100 rows, defaulting to 25; new trials allow up to 10. Use a smaller explicit size when your remaining allowance is low. Commercial response limits depend on license status.
+
+Search accepts repeated location parameters, such as `county=Cook&county=Lake`. At least one location filter is required. Source-data filters apply only when supported by the chosen source; discover support with [List sources](/api-reference/list-sources).
+
+The `limit` alias can also bound paginated requests. If you supply it together with `page_size` or `per_page`, use matching values; conflicting limits return `400`.
+
+---
+
+## Commercial integrations
+
+Source: https://www.foreclosuredatahub.com/docs/guides/licensing
+
+Choose access for internal workflows or customer-facing products.
+
+Retail Pro and Business subscriptions support internal use. To show records to your own customers, use [commercial data licensing](https://www.foreclosuredatahub.com/data-licensing).
+
+Commercial keys use the same API endpoints and `x-api-key` header, with separate monthly call allowances. A commercial evaluation includes 50 successful calls over three days, at most 10 records per response, and 10 requests/minute. It does not convert automatically.
+
+Review current tiers and license terms on the [licensing page](https://www.foreclosuredatahub.com/data-licensing), and manage access in the [license dashboard](https://www.foreclosuredatahub.com/dashboard/license).
+
+---
+
+## List sources
+
+Source: https://www.foreclosuredatahub.com/docs/api-reference/list-sources
+
+Discover available feeds, coverage, and supported filters.
+
+List all available data sources with their coverage and supported filters. coverage is one of national (all US states), regional (a subset of states), state (one state), or county (one county). states lists the USPS codes covered; it is null for national feeds and for regional feeds whose footprint varies - query /v1/properties/data with the state filter to enumerate those.
+
+## Parameters
+
+This endpoint has no query parameters.
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -H "x-api-key: fdh_ak_your_key_here" \
+  https://www.foreclosuredatahub.com/api/v1/sources
+```
+
+```javascript JavaScript
+const res = await fetch(
+  "https://www.foreclosuredatahub.com/api/v1/sources",
+  { headers: { "x-api-key": "fdh_ak_your_key_here" } }
+);
+const data = await res.json();
+```
+
+```python Python
+import requests
+
+res = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/sources",
+    headers={"x-api-key": "fdh_ak_your_key_here"}
+)
+data = res.json()
+```
+
+</CodeGroup>
+
+## Response shape
+
+Illustrative response; `...` represents omitted fields or records.
+
+```json
+{
+  "data": [
+    {
+      "id": "feed-01",
+      "name": "Data Feed 01",
+      "coverage": "regional",
+      "states": ["AL", "AZ", "CA", "..."],
+      "filters": { "county": true, "state": true, "sale_date": true, "owner_name": true, "est_value": true }
+    },
+    ...
+  ]
+}
+```
+
+See [response fields](/concepts/responses), [quotas](/concepts/rate-limits), and [error handling](/concepts/errors).
+
+---
+
+## Search properties
+
+Source: https://www.foreclosuredatahub.com/docs/api-reference/search-properties
+
+Search listings across sources with grouped or unified responses.
+
+Search across all data sources simultaneously. Paid retail requests return up to 100 rows total across all source groups; new trials return up to 10. Groups after the limit contain counts and empty records. At least one location filter (county, state, zip, or address) is required.
+
+## Parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `limit` | integer | No | Total listing rows across all groups: 1–100 paid or 1–10 during a new trial. Defaults to 25 when paid or 10 during a new trial. Choose a value within your remaining allowance. |
+| `mode` | string | No | Use unified for one records array with consistent field names, including source, row_id, nullable owner_first_name / owner_last_name, and file_number where supplied. The default groups source-specific records by feed. |
+| `county` | string | No | County name filter. Can specify multiple (e.g., county=Cook&county=Lake). |
+| `state` | string | No | State name or abbreviation. Can specify multiple. |
+| `zip` | string | No | Zip code filter. Can specify multiple. |
+| `address` | string | No | Property address filter (partial match). Can specify multiple. |
+| `pre_foreclosure` | boolean | No | Set true or 1 for scheduled-sale preforeclosures: sale date today or later (UTC), excluding REO-only feeds and REO asset types. Matches the dashboard filter. Listings without a known sale date, including early-stage defaults, are excluded. false or 0 disables the filter (default); other values return 400. A location filter is still required. |
+| `sale_date_start` | date | No | Filter by sale date start (YYYY-MM-DD). |
+| `sale_date_end` | date | No | Filter by sale date end (YYYY-MM-DD). |
+| `owner_name` | string | No | Owner name filter (partial match on first or last name). Only applied to sources that expose owner fields. |
+| `est_value_min` | number | No | Minimum estimated value (Market Valuation). Only applied to sources with an estimated value field. |
+| `est_value_max` | number | No | Maximum estimated value (Market Valuation). Only applied to sources with an estimated value field. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -H "x-api-key: fdh_ak_..." \
+  "https://www.foreclosuredatahub.com/api/v1/properties/search?state=FL&county=Miami-Dade"
+```
+
+```javascript JavaScript
+const params = new URLSearchParams({
+  state: "FL",
+  county: "Miami-Dade",
+});
+
+const res = await fetch(
+  `https://www.foreclosuredatahub.com/api/v1/properties/search?${params}`,
+  { headers: { "x-api-key": "fdh_ak_..." } }
+);
+const data = await res.json();
+```
+
+```python Python
+import requests
+
+res = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/properties/search",
+    headers={"x-api-key": "fdh_ak_..."},
+    params={"state": "FL", "county": "Miami-Dade"}
+)
+data = res.json()
+```
+
+</CodeGroup>
+
+## Response shape
+
+Illustrative response; `...` represents omitted fields or records.
+
+```json
+{
+  "data": {
+    "results": [
+      {
+        "source": "feed-01",
+        "source_name": "Data Feed 01",
+        "records": [ { "source": "feed-01", "row_id": "listing-record-id", ... }, ... ],
+        "count": 45,
+        "has_more": false
+      },
+      ...
+    ]
+  },
+  "meta": { "total": 312 }
+}
+```
+
+See [response fields](/concepts/responses), [quotas](/concepts/rate-limits), and [error handling](/concepts/errors).
+
+---
+
+## Unified search
+
+Source: https://www.foreclosuredatahub.com/docs/api-reference/unified-search
+
+Search with mode=unified to get normalized, paginated results across all sources in a single flat list. Each record includes standardized fields (address, city, state, zip, county, sale_date, bid_amount, owner name, etc.) with a source field indicating origin.
+
+Search with mode=unified to get normalized, paginated results across all sources in a single flat list. Each record includes standardized fields (address, city, state, zip, county, sale_date, bid_amount, owner name, etc.) with a source field indicating origin.
+
+Use the search endpoint with `mode=unified`. At least one location filter is required.
+
+## Parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `mode` | string | Yes | Set to "unified" to enable unified mode. |
+| `county` | string | No | County name filter. Can specify multiple. |
+| `state` | string | No | State name or abbreviation. Can specify multiple. |
+| `zip` | string | No | Zip code filter. Can specify multiple. |
+| `address` | string | No | Property address filter (partial match). Can specify multiple. |
+| `pre_foreclosure` | boolean | No | Set true or 1 for scheduled-sale preforeclosures: sale date today or later (UTC), excluding REO-only feeds and REO asset types. Matches the dashboard filter. Listings without a known sale date, including early-stage defaults, are excluded. false or 0 disables the filter (default); other values return 400. A location filter is still required. |
+| `sale_date_start` | date | No | Filter by sale date start (YYYY-MM-DD). |
+| `sale_date_end` | date | No | Filter by sale date end (YYYY-MM-DD). |
+| `sale_days` | integer | No | Minimum lead time: sale_date_parsed must be later than today + N days (integer 1-365, unbounded above). ANDs with sale_date_start/sale_date_end. Listings without a parsed sale date stay included — an unscheduled sale cannot violate the bound. Unified mode only. |
+| `sale_status` | string | No | Canonical sale-status group: active, coming-soon, for-sale, postponed, cancelled, price-reduced, back-to-bank, new-listing, sold, mortgage-foreclosure, outbid, preview, pending, hard-to-sell, nos, vacant-lot, sale-held, none. Groups merge clearly-equivalent feed statuses — e.g. cancelled covers Cancelled/WITHDRAWN/Sale Invalid, sold covers Sold/Completed/3rd-party variants, postponed covers postpone*/On Hold. none matches listings with no reported status. Unified mode only. |
+| `owner_name` | string | No | Owner name filter (partial match on first or last name). |
+| `est_value_min` | number | No | Minimum estimated value (Market Valuation). Uses the unified zestimate_numeric column. |
+| `est_value_max` | number | No | Maximum estimated value (Market Valuation). Uses the unified zestimate_numeric column. |
+| `page` | integer | No | Page number (default: 1). |
+| `page_size` | integer | No | Results per page, 1–100 for paid keys or 1–10 for new trials. Defaults to 25 paid or 10 during a trial. Your remaining allowance may lower an omitted first-page size. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -H "x-api-key: fdh_ak_..." \
+  "https://www.foreclosuredatahub.com/api/v1/properties/search?mode=unified&state=FL&pre_foreclosure=true&page=1&page_size=25"
+```
+
+```javascript JavaScript
+const params = new URLSearchParams({
+  mode: "unified",
+  state: "FL",
+  pre_foreclosure: "true",
+  page: "1",
+  page_size: "25",
+});
+
+const res = await fetch(
+  `https://www.foreclosuredatahub.com/api/v1/properties/search?${params}`,
+  { headers: { "x-api-key": "fdh_ak_..." } }
+);
+const data = await res.json();
+```
+
+```python Python
+import requests
+
+res = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/properties/search",
+    headers={"x-api-key": "fdh_ak_..."},
+    params={
+        "mode": "unified",
+        "state": "FL",
+        "pre_foreclosure": "true",
+        "page": 1,
+        "page_size": 25
+    }
+)
+data = res.json()
+```
+
+</CodeGroup>
+
+## Response shape
+
+Illustrative response; `...` represents omitted fields or records.
+
+```json
+{
+  "data": {
+    "records": [
+      {
+        "source": "feed-01",
+        "address": "123 Main St",
+        "city": "Miami",
+        "state": "FL",
+        "zip": "33101",
+        "county": "Miami-Dade",
+        "sale_date": "2026-04-15",
+        "sale_status": "Postponed",
+        "sale_status_group": "postponed",
+        "bid_amount": "250000",
+        "owner_first_name": "John",
+        "owner_last_name": "Doe",
+        ...
+      },
+      ...
+    ]
+  },
+  "meta": {
+    "total": 1250,
+    "page": 1,
+    "per_page": 25,
+    "total_pages": 50
+  }
+}
+```
+
+See [response fields](/concepts/responses), [quotas](/concepts/rate-limits), and [error handling](/concepts/errors).
+
+---
+
+## Get source data
+
+Source: https://www.foreclosuredatahub.com/docs/api-reference/single-source-data
+
+Retrieve a paginated set of listings from one source.
+
+Fetch paginated data from a single source. Max 100 records per page when paid, or 10 during a new trial. Defaults to 25 when paid or 10 during a new trial.
+
+## Parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `source` | string | Yes | Data source ID (from /v1/sources). |
+| `page` | integer | No | Page number (default: 1). |
+| `per_page` | integer | No | Results per page, 1–100 paid or 1–10 during a new trial. Defaults to 25 when paid or 10 during a new trial. |
+| `start_date` | date | No | Filter by date added start (YYYY-MM-DD). |
+| `end_date` | date | No | Filter by date added end (YYYY-MM-DD). |
+| `county` | string | No | County name filter. |
+| `state` | string | No | State name or abbreviation. |
+| `owner_name` | string | No | Owner name filter (partial match on first or last name). Only applied when the source exposes owner fields. |
+| `est_value_min` | number | No | Minimum estimated value (Market Valuation). Only applied when the source exposes an estimated value field. |
+| `est_value_max` | number | No | Maximum estimated value (Market Valuation). Only applied when the source exposes an estimated value field. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -H "x-api-key: fdh_ak_..." \
+  "https://www.foreclosuredatahub.com/api/v1/properties/data?source=feed-01&state=TX&per_page=25"
+```
+
+```javascript JavaScript
+const params = new URLSearchParams({
+  source: "feed-01",
+  state: "TX",
+  per_page: "25",
+});
+
+const res = await fetch(
+  `https://www.foreclosuredatahub.com/api/v1/properties/data?${params}`,
+  { headers: { "x-api-key": "fdh_ak_..." } }
+);
+const data = await res.json();
+```
+
+```python Python
+import requests
+
+res = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/properties/data",
+    headers={"x-api-key": "fdh_ak_..."},
+    params={"source": "feed-01", "state": "TX", "per_page": 25}
+)
+data = res.json()
+```
+
+</CodeGroup>
+
+## Response shape
+
+Illustrative response; `...` represents omitted fields or records.
+
+```json
+{
+  "data": [
+    { "Address": "123 Main St", "County": "Harris", ... },
+    ...
+  ],
+  "meta": {
+    "total": 1250,
+    "page": 1,
+    "per_page": 25,
+    "total_pages": 50
+  }
+}
+```
+
+See [response fields](/concepts/responses), [quotas](/concepts/rate-limits), and [error handling](/concepts/errors).
+
+---
+
+## Get record counts
+
+Source: https://www.foreclosuredatahub.com/docs/api-reference/record-counts
+
+Count listings by source within a date range.
+
+Get record counts per data source for a date or date range.
+
+## Parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `date` | date | No | Single date (YYYY-MM-DD). Defaults to today. |
+| `start_date` | date | No | Range start (YYYY-MM-DD). Use with end_date. |
+| `end_date` | date | No | Range end (YYYY-MM-DD). Use with start_date. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -H "x-api-key: fdh_ak_..." \
+  "https://www.foreclosuredatahub.com/api/v1/properties/counts?start_date=2026-03-15&end_date=2026-03-22"
+```
+
+```javascript JavaScript
+const params = new URLSearchParams({
+  start_date: "2026-03-15",
+  end_date: "2026-03-22",
+});
+
+const res = await fetch(
+  `https://www.foreclosuredatahub.com/api/v1/properties/counts?${params}`,
+  { headers: { "x-api-key": "fdh_ak_..." } }
+);
+const data = await res.json();
+```
+
+```python Python
+import requests
+
+res = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/properties/counts",
+    headers={"x-api-key": "fdh_ak_..."},
+    params={"start_date": "2026-03-15", "end_date": "2026-03-22"}
+)
+data = res.json()
+```
+
+</CodeGroup>
+
+## Response shape
+
+Illustrative response; `...` represents omitted fields or records.
+
+```json
+{
+  "data": {
+    "start_date": "2026-03-15",
+    "end_date": "2026-03-22",
+    "sources": [
+      {
+        "id": "feed-01",
+        "name": "Data Feed 01",
+        "count": 523
+      },
+      ...
+    ],
+    "total": 4821
+  }
+}
+```
+
+See [response fields](/concepts/responses), [quotas](/concepts/rate-limits), and [error handling](/concepts/errors).
