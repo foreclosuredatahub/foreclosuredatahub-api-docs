@@ -2,6 +2,11 @@
   "$schema": "https://mintlify.com/docs.json",
   "name": "Foreclosure Data Hub",
   "description": "REST API documentation for foreclosure, auction, and property data.",
+  "seo": {
+    "metatags": {
+      "canonical": "https://www.foreclosuredatahub.com/docs"
+    }
+  },
   "theme": "almond",
   "colors": {
     "primary": "#009866",
