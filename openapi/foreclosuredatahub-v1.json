@@ -39,6 +39,25 @@
                       "additionalProperties": true
                     }
                   }
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "feed-01",
+                      "name": "Data Feed 01",
+                      "coverage": "state",
+                      "states": [
+                        "FL"
+                      ],
+                      "filters": {
+                        "county": true,
+                        "state": true,
+                        "sale_date": true,
+                        "owner_name": true,
+                        "est_value": true
+                      }
+                    }
+                  ]
                 }
               }
             }
@@ -312,6 +331,29 @@
                       "additionalProperties": true
                     }
                   }
+                },
+                "example": {
+                  "data": {
+                    "results": [
+                      {
+                        "source": "feed-01",
+                        "source_name": "Data Feed 01",
+                        "records": [
+                          {
+                            "source": "feed-01",
+                            "row_id": "example-listing",
+                            "Address": "123 Example St",
+                            "County": "Miami-Dade"
+                          }
+                        ],
+                        "count": 1,
+                        "has_more": false
+                      }
+                    ]
+                  },
+                  "meta": {
+                    "total": 1
+                  }
                 }
               }
             }
@@ -507,6 +549,22 @@
                       "additionalProperties": true
                     }
                   }
+                },
+                "example": {
+                  "data": [
+                    {
+                      "source": "feed-01",
+                      "row_id": "example-listing",
+                      "Address": "123 Example St",
+                      "County": "Harris"
+                    }
+                  ],
+                  "meta": {
+                    "total": 1,
+                    "page": 1,
+                    "per_page": 5,
+                    "total_pages": 1
+                  }
                 }
               }
             }
@@ -637,6 +695,20 @@
                       "type": "object",
                       "additionalProperties": true
                     }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "start_date": "2026-03-15",
+                    "end_date": "2026-03-22",
+                    "sources": [
+                      {
+                        "id": "feed-01",
+                        "name": "Data Feed 01",
+                        "count": 523
+                      }
+                    ],
+                    "total": 523
                   }
                 }
               }
