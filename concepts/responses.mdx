@@ -51,3 +51,10 @@ Raw by-source records include `Lender Name` where captured. Unified responses al
 ## Estimated equity
 
 `estimated_equity` is available in unified responses. It is estimated value minus the original recorded loan principal. It ignores principal paid down and secondary liens, can be negative, and is not a payoff figure.
+
+
+## Category records
+
+Category searches use `data.records` and pagination in `meta`, including `category` and `unit`. They have explicit OpenAPI schemas: `TrusteeSale`, `SheriffSale`, `TaxSale`, `TaxDelinquentProperty`, and `FilingProperty`. Category-specific fields are nullable when no value is supplied. Internal review, capture IDs, and processing metadata are excluded.
+
+Sale records retain the normalized property fields. Tax sales add parcel bundles, tax sale type/status, published bid amounts, source dates, time zone, and expiry. Sheriff sales add authority, legal basis, parcel/auction identifiers, and source expiry. Delinquency and filing records use their own amount, date, party, and identity fields; they do not fabricate sale dates. Read the [category guide](/guides/foreclosure-categories) for counting and reconciliation rules.

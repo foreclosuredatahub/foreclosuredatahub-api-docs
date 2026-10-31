@@ -3,7 +3,7 @@ title: "Foreclosure Data Hub documentation"
 description: "Build with foreclosure, auction, and property data."
 ---
 
-Use the Foreclosure Data Hub REST API to discover data sources, search listings, retrieve source records, and track record counts.
+Use the Foreclosure Data Hub REST API to search property feeds, trustee sales, sheriff sales, tax sales, tax delinquency, and early filings. Discover category coverage, retrieve records, and track matching counts.
 
 <Info>API base URL: `https://www.foreclosuredatahub.com/api/v1`. Documentation hosting does not change your API keys or endpoint URLs.</Info>
 
@@ -37,6 +37,10 @@ Keep each listing's `source` and `row_id` for reconciliation. See the [response 
 - [Unified search](/api-reference/unified-search)
 - [Get source data](/api-reference/single-source-data)
 - [Get record counts](/api-reference/record-counts)
+
+## Category endpoints
+
+Choose a [foreclosure data category](/guides/foreclosure-categories), then use its search and counts endpoints. Category searches return normalized records with explicit record units and category-specific fields.
 
 ## Preforeclosure search
 

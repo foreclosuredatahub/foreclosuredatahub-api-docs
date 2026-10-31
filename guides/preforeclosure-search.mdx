@@ -17,3 +17,5 @@ This matches the dashboard filter: sale date today or later in UTC, excluding RE
 In unified mode, `sale_days` adds minimum lead time of 1–365 days. It combines with `sale_date_start` and `sale_date_end`. On its own, `sale_days` retains listings without a parsed date; combining it with `pre_foreclosure=true` excludes those undated listings.
 
 Use `sale_status` to narrow canonical status groups in unified mode. Scheduled sale dates can change; check the record's latest status and source evidence before acting on a listing.
+
+For records before a known sale date, use [Early Filings](/api-reference/filings/search). For published overdue property taxes, use [Tax Delinquency](/api-reference/tax-delinquent/search). These categories have separate date and counting semantics.

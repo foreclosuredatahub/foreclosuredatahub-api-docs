@@ -1,0 +1,74 @@
+---
+title: "Count tax delinquency"
+description: "Count tax delinquency with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub."
+keywords: ["tax delinquency", "foreclosure API", "counts"]
+openapi: "GET /api/v1/tax-delinquent/counts"
+---
+
+Use Foreclosure Data Hub to count matching tax delinquency before retrieving a page. Counts use the search filters and eligibility rules, with a `properties` unit.
+
+This endpoint consumes an API request but no delivered rows. Its total counts category records, not distinct properties across categories. Pagination parameters are not accepted.
+
+## Parameters
+
+Unknown parameters and repeated scalar parameters return `400`. Date and numeric ranges must run from lower to higher values.
+
+| Parameter | Meaning |
+| --- | --- |
+| `state` | US state name or abbreviation. |
+| `county` | Exact county name, case-insensitive. |
+| `field` | Delinquency field searched by q. Parcel also searches account aliases. |
+| `q` | Search the selected field; parcel also searches account aliases. |
+| `minimum` | Minimum reported delinquent balance. |
+| `maximum` | Maximum reported delinquent balance. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/tax-delinquent/counts?state=TX&field=owner&q=Example"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://www.foreclosuredatahub.com/api/v1/tax-delinquent/counts?state=TX&field=owner&q=Example",
+  { headers: { "x-api-key": process.env.FDH_API_KEY } }
+);
+if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+const result = await response.json();
+```
+
+```python Python
+import os
+import requests
+
+response = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/tax-delinquent/counts?state=TX&field=owner&q=Example",
+    headers={"x-api-key": os.environ["FDH_API_KEY"]},
+    timeout=60,
+)
+response.raise_for_status()
+result = response.json()
+```
+
+</CodeGroup>
+
+## Response
+
+A query can succeed with no matching records. This valid empty example does not indicate unavailable inventory:
+
+```json
+{
+  "data": {
+    "category": "tax-delinquent",
+    "unit": "properties",
+    "total": 0
+  }
+}
+```
+
+`total` matches the search total for identical filters against the same inventory. Retrieve [matching records](/api-reference/tax-delinquent/search). Inventory can change between requests. When the reader reports unavailable data, the API returns `503` instead of a successful empty result.
+
+See [category semantics](/guides/foreclosure-categories), [source discovery](/api-reference/list-sources), [pagination](/guides/pagination), and [allowances](/concepts/rate-limits).

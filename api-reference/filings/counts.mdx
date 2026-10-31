@@ -1,0 +1,77 @@
+---
+title: "Count early filings"
+description: "Count early filings with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub."
+keywords: ["early filings", "foreclosure API", "counts"]
+openapi: "GET /api/v1/filings/counts"
+---
+
+Use Foreclosure Data Hub to count matching early filings before retrieving a page. Counts use the search filters and eligibility rules, with a `proceeding_parcels` unit.
+
+This endpoint consumes an API request but no delivered rows. Its total counts category records, not distinct properties across categories. Pagination parameters are not accepted.
+
+## Parameters
+
+Unknown parameters and repeated scalar parameters return `400`. Date and numeric ranges must run from lower to higher values.
+
+| Parameter | Meaning |
+| --- | --- |
+| `state` | Filing jurisdiction as a US state name or abbreviation. |
+| `county` | Partial county name or qualified county key such as FL:Duval. |
+| `source` | Filing source ID from /sources?category=filings. |
+| `q` | Search instrument, case, address, legal text, and recorded parties. |
+| `recorded_from` | Inclusive recording date start, YYYY-MM-DD. |
+| `recorded_to` | Inclusive recording date end, YYYY-MM-DD. |
+| `event_type` | Recorded event type; results remain eligible property groups. |
+| `filing_kind` | Filing classification; a candidate does not establish a completed foreclosure. |
+| `has_case` | Require a reported case number. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/filings/counts?state=FL&recorded_from=2026-10-01"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://www.foreclosuredatahub.com/api/v1/filings/counts?state=FL&recorded_from=2026-10-01",
+  { headers: { "x-api-key": process.env.FDH_API_KEY } }
+);
+if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+const result = await response.json();
+```
+
+```python Python
+import os
+import requests
+
+response = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/filings/counts?state=FL&recorded_from=2026-10-01",
+    headers={"x-api-key": os.environ["FDH_API_KEY"]},
+    timeout=60,
+)
+response.raise_for_status()
+result = response.json()
+```
+
+</CodeGroup>
+
+## Response
+
+A query can succeed with no matching records. This valid empty example does not indicate unavailable inventory:
+
+```json
+{
+  "data": {
+    "category": "filings",
+    "unit": "proceeding_parcels",
+    "total": 0
+  }
+}
+```
+
+`total` matches the search total for identical filters against the same inventory. Retrieve [matching records](/api-reference/filings/search). Inventory can change between requests. When the reader reports unavailable data, the API returns `503` instead of a successful empty result.
+
+See [category semantics](/guides/foreclosure-categories), [source discovery](/api-reference/list-sources), [pagination](/guides/pagination), and [allowances](/concepts/rate-limits).

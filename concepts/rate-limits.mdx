@@ -16,6 +16,8 @@ All retail keys on an account share these limits:
 | All endpoints combined | 1,000 requests/hour |
 | New trial | 30 requests total |
 
+Category searches share the Search bucket with property search; category counts share the Counts bucket. Source discovery, including category discovery, shares the Sources bucket. Switching categories does not reset or multiply these limits.
+
 Exceeding a rate limit returns `429` with `Retry-After`.
 
 ## Retail row allowances
@@ -39,3 +41,5 @@ View current usage in [Settings → Subscription](https://www.foreclosuredatahub
 ## Commercial limits
 
 Commercial evaluations allow **50 successful calls total over three days**, **10 records per response**, and **10 requests/minute**. They do not reset monthly or convert automatically, and no card is required. Paid commercial licenses use separate monthly call allowances and allow at most 100 records per response. See [commercial licensing](https://www.foreclosuredatahub.com/data-licensing) for current tiers.
+
+All five category searches use the same retail and commercial allowances. Each returned sale, delinquency, or filing record counts as one delivered row under retail accounting. Category counts and source discovery consume requests but no delivered rows.

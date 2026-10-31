@@ -1,0 +1,85 @@
+---
+title: "Search tax delinquency"
+description: "Find tax delinquency with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub."
+keywords: ["tax delinquency", "foreclosure API", "search"]
+openapi: "GET /api/v1/tax-delinquent/search"
+---
+
+Tax Delinquency returns published delinquent property/account records. Read amount_kind with reported_balance; published_total is separate and nullable. These records do not imply an auction date. Starting offsets are limited to 500,000, including the second block of pages larger than 50 rows.
+
+Results are normalized automatically in `data.records`. No `mode=unified` or location filter is required. Each returned row consumes the applicable delivered-row allowance.
+
+## Parameters
+
+Unknown parameters and repeated scalar parameters return `400`. Date and numeric ranges must run from lower to higher values.
+
+| Parameter | Meaning |
+| --- | --- |
+| `state` | US state name or abbreviation. |
+| `county` | Exact county name, case-insensitive. |
+| `field` | Delinquency field searched by q. Parcel also searches account aliases. |
+| `q` | Search the selected field; parcel also searches account aliases. |
+| `minimum` | Minimum reported delinquent balance. |
+| `maximum` | Maximum reported delinquent balance. |
+| `page` | Page number, starting at 1. Keep page_size fixed while paging. |
+| `page_size` | Rows per page: 1 to 100 paid, 1 to 10 trial. Defaults to 25 paid or 10 trial. An omitted first-page size may shrink to the remaining allowance. |
+| `limit` | Alias for page_size; values must match when both are supplied. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/tax-delinquent/search?state=TX&field=owner&q=Example&page_size=5"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://www.foreclosuredatahub.com/api/v1/tax-delinquent/search?state=TX&field=owner&q=Example&page_size=5",
+  { headers: { "x-api-key": process.env.FDH_API_KEY } }
+);
+if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+const result = await response.json();
+```
+
+```python Python
+import os
+import requests
+
+response = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/tax-delinquent/search?state=TX&field=owner&q=Example&page_size=5",
+    headers={"x-api-key": os.environ["FDH_API_KEY"]},
+    timeout=60,
+)
+response.raise_for_status()
+result = response.json()
+```
+
+</CodeGroup>
+
+## Response
+
+The OpenAPI response panel includes a synthetic record example and an empty result. Example identities and property details are illustrative.
+
+A query can succeed with no matching records. This valid empty example does not indicate unavailable inventory:
+
+```json
+{
+  "data": {
+    "records": []
+  },
+  "meta": {
+    "category": "tax-delinquent",
+    "unit": "properties",
+    "total": 0,
+    "page": 1,
+    "per_page": 5,
+    "total_pages": 0
+  }
+}
+```
+
+Records follow the `TaxDelinquentProperty` schema in the OpenAPI reference. Retain `source` and `row_id` for reconciliation. Use [matching counts](/api-reference/tax-delinquent/counts) to check result size. Inventory can change between requests. When the reader reports unavailable data, the API returns `503` instead of a successful empty result.
+
+See [category semantics](/guides/foreclosure-categories), [source discovery](/api-reference/list-sources), [pagination](/guides/pagination), and [allowances](/concepts/rate-limits).

@@ -8,7 +8,24 @@ List all available data sources with their coverage and supported filters. cover
 
 ## Parameters
 
-This endpoint has no query parameters.
+| Parameter | Meaning |
+| --- | --- |
+| `category` | Optional: `trustee-sales`, `sheriff-sales`, `tax-sales`, `tax-delinquent`, or `filings`. Omit for the original property feed catalog. |
+
+When using `category`, supply it once and do not add other parameters. The response remains a `data` array. Category entries add `category`, `coverage_basis`, and supported filter names. Some include county metadata or source dates.
+
+- `configured`: The source/category is configured for these states or counties. This does not promise current inventory or complete coverage.
+- `published`: Delinquency source metadata, including `available` and source/capture/expiry dates when supplied.
+- `current_inventory`: Filing sources represented by currently eligible property records.
+
+Tax and sheriff sales each expose an aggregate inventory ID (`tax_sales` and `sheriff_sales`). Trustee feeds retain their numbered IDs. Delinquency and filings use their source keys. These category IDs do not expand the legacy `/properties/data` source catalog.
+
+```bash
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/sources?category=tax-sales"
+```
+
+See [category semantics](/guides/foreclosure-categories) before interpreting coverage or totals.
 
 ## Examples
 

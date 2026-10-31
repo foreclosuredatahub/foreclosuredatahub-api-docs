@@ -5,6 +5,7 @@ description: "Retrieve bounded pages without exhausting your allowance."
 
 | Mode | Page | Page size | Response rows |
 | --- | --- | --- | --- |
+| Category search | `page` | `page_size` | `data.records` |
 | Unified search | `page` | `page_size` | `data.records` |
 | Single source | `page` | `per_page` | `data` |
 | Grouped search | No page parameter | `limit` | `data.results[].records` |
@@ -13,6 +14,11 @@ Page numbering starts at 1. Use `meta.total_pages` to stop paginated requests. G
 
 Retail paid responses allow up to 100 rows, defaulting to 25; new trials allow up to 10. Use a smaller explicit size when your remaining allowance is low. Commercial response limits depend on license status.
 
-Search accepts repeated location parameters, such as `county=Cook&county=Lake`. At least one location filter is required. Source-data filters apply only when supported by the chosen source; discover support with [List sources](/api-reference/list-sources).
+Legacy property search and category sale searches accept repeated location parameters, such as `county=Cook&county=Lake`. Legacy property search requires at least one location filter. New category searches allow paginated browsing without a location filter; delinquency and filing filters cannot be repeated. Source-data filters apply only when supported by the chosen source; discover support with [List sources](/api-reference/list-sources).
 
 The `limit` alias can also bound paginated requests. If you supply it together with `page_size` or `per_page`, use matching values; conflicting limits return `400`.
+
+
+Category searches reject unknown parameters and repeated scalar values. `page` is limited to 100,000. Tax delinquency also limits starting offsets to 500,000, including the second block in pages larger than 50 rows. Narrow filters for deeper result sets. Keep the same explicit page size while paging; inventory changes can still move records between pages.
+
+Category `/counts` endpoints use the search filters but reject `page`, `page_size`, and `limit`. They consume requests without consuming delivered rows.

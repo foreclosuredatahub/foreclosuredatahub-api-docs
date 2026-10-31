@@ -6,6 +6,7 @@
   <url><loc>https://www.foreclosuredatahub.com/docs/concepts/rate-limits</loc></url>
   <url><loc>https://www.foreclosuredatahub.com/docs/concepts/responses</loc></url>
   <url><loc>https://www.foreclosuredatahub.com/docs/concepts/errors</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/guides/foreclosure-categories</loc></url>
   <url><loc>https://www.foreclosuredatahub.com/docs/guides/preforeclosure-search</loc></url>
   <url><loc>https://www.foreclosuredatahub.com/docs/guides/pagination</loc></url>
   <url><loc>https://www.foreclosuredatahub.com/docs/guides/licensing</loc></url>
@@ -14,4 +15,14 @@
   <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/unified-search</loc></url>
   <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/single-source-data</loc></url>
   <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/record-counts</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/trustee-sales/search</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/trustee-sales/counts</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/sheriff-sales/search</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/sheriff-sales/counts</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/tax-sales/search</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/tax-sales/counts</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/tax-delinquent/search</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/tax-delinquent/counts</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/filings/search</loc></url>
+  <url><loc>https://www.foreclosuredatahub.com/docs/api-reference/filings/counts</loc></url>
 </urlset>

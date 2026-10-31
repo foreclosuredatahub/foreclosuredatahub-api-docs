@@ -33,4 +33,11 @@ The response includes `data.records` and pagination in `meta`. Five rows fits th
 
 <Warning>Each new property request, including a retry, can consume rows again. Check the response and quota headers before retrying.</Warning>
 
+Use [category search endpoints](/guides/foreclosure-categories) for trustee sales, sheriff sales, tax sales, tax delinquency, or early filings. For example:
+
+```bash
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/tax-sales/search?state=SC&page_size=5"
+```
+
 Continue with [pagination](/guides/pagination) or [preforeclosure search](/guides/preforeclosure-search).

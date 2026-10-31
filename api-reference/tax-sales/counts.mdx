@@ -1,0 +1,81 @@
+---
+title: "Count tax sales"
+description: "Count tax sales with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub."
+keywords: ["tax sales", "foreclosure API", "counts"]
+openapi: "GET /api/v1/tax-sales/counts"
+---
+
+Use Foreclosure Data Hub to count matching tax sales before retrieving a page. Counts use the search filters and eligibility rules, with a `sale_lots` unit.
+
+This endpoint consumes an API request but no delivered rows. Its total counts category records, not distinct properties across categories. Pagination parameters are not accepted.
+
+## Parameters
+
+Unknown parameters and repeated scalar parameters return `400`. Date and numeric ranges must run from lower to higher values.
+
+| Parameter | Meaning |
+| --- | --- |
+| `state` | US state name or abbreviation. Repeat for multiple values, at most 50. |
+| `county` | Partial county name. Repeat for multiple values, at most 50. |
+| `zip` | Property ZIP prefix. Repeat for multiple values, at most 50. |
+| `address` | Partial property address. Repeat for multiple values, at most 50. |
+| `sale_date_start` | Inclusive sale date start, YYYY-MM-DD. |
+| `sale_date_end` | Inclusive sale date end, YYYY-MM-DD. |
+| `sale_days` | Minimum sale lead time, 1 to 365 days. Tax sales require a known date and use local sale days. Trustee and sheriff searches retain undated rows unless another date filter excludes them. |
+| `owner_name` | Partial published owner name. |
+| `tax_sale_type` | Type of tax sale or interest. |
+| `tax_status` | all includes undated available inventory; upcoming selects qualified upcoming sales. |
+| `minimum_bid_min` | Minimum published minimum bid; unknown bids do not match. |
+| `minimum_bid_max` | Maximum published minimum bid; unknown bids do not match. |
+| `q` | Search parcel and case identifiers. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/tax-sales/counts?state=SC&tax_status=all"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://www.foreclosuredatahub.com/api/v1/tax-sales/counts?state=SC&tax_status=all",
+  { headers: { "x-api-key": process.env.FDH_API_KEY } }
+);
+if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+const result = await response.json();
+```
+
+```python Python
+import os
+import requests
+
+response = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/tax-sales/counts?state=SC&tax_status=all",
+    headers={"x-api-key": os.environ["FDH_API_KEY"]},
+    timeout=60,
+)
+response.raise_for_status()
+result = response.json()
+```
+
+</CodeGroup>
+
+## Response
+
+A query can succeed with no matching records. This valid empty example does not indicate unavailable inventory:
+
+```json
+{
+  "data": {
+    "category": "tax-sales",
+    "unit": "sale_lots",
+    "total": 0
+  }
+}
+```
+
+`total` matches the search total for identical filters against the same inventory. Retrieve [matching records](/api-reference/tax-sales/search). Inventory can change between requests. When the reader reports unavailable data, the API returns `503` instead of a successful empty result.
+
+See [category semantics](/guides/foreclosure-categories), [source discovery](/api-reference/list-sources), [pagination](/guides/pagination), and [allowances](/concepts/rate-limits).

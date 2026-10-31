@@ -1,0 +1,45 @@
+---
+title: "Choose a foreclosure data category"
+description: "Choose between trustee sales, sheriff sales, tax sales, tax delinquency, and early filings, with clear date, identity, coverage, and counting rules."
+keywords: ["foreclosure types", "tax delinquency", "early filings", "foreclosure API"]
+---
+
+Choose a Foreclosure Data Hub category that matches the records you need. Sale listings, delinquent tax accounts, and recorded filing events represent different stages and use different dates and counting units.
+
+| Category | Search | Counting unit |
+| --- | --- | --- |
+| Trustee Sales | [Trustee search](/api-reference/trustee-sales/search) | Sale listings |
+| Sheriff Sales | [Sheriff search](/api-reference/sheriff-sales/search) | Sale listings |
+| Tax Sales | [Tax sale search](/api-reference/tax-sales/search) | Sale lots, potentially containing several parcels |
+| Tax Delinquency | [Delinquency search](/api-reference/tax-delinquent/search) | Published property/account records |
+| Early Filings | [Filing search](/api-reference/filings/search) | Eligible proceeding and parcel groups |
+
+Each category has `/search` and `/counts` endpoints under `/api/v1`. Searches return `data.records` and `meta`; counts return `data.total`, `data.category`, and `data.unit`. They use the same API keys, rate limits, and applicable row allowances as the existing property endpoints.
+
+## Dates and statuses
+
+Trustee and sheriff filters use sale dates. Trustee searches default to all dates and statuses; `sale_status=trustee-upcoming` selects qualified upcoming sales.
+
+Tax Sales supports `tax_deed`, `redeemable_deed`, and `tax_lien_certificate`. Its default `tax_status=all` includes published available inventory without a scheduled auction. Use `tax_status=upcoming` for qualified upcoming sales. Tax-sale time zones and local sale-day calculations are returned separately. Missing sale dates or minimum bids do not satisfy date or bid ranges.
+
+Tax Delinquency has a `source_as_of` date and collection/expiry timestamps. The published balance can be principal or a delinquent total; read `amount_kind` before comparing amounts. Delinquency alone does not establish a scheduled sale.
+
+Early Filings uses `recorded_from` and `recorded_to` against `record_date`. Filing types include mortgage, HOA, and tax/government candidates. A candidate classification does not establish a completed foreclosure. Recorded grantors and grantees are not automatically current owners. `state` describes the filing jurisdiction; `situs_state` describes the matched property.
+
+## Identity and counting
+
+Retain `source` and `row_id` for every delivered record. These identify category records, not globally unique parcels. Tax lots can bundle parcels. Filings group eligible events by proceeding and parcel; their stable `row_id` can remain the same when a different event represents the group. `event_id`, `proceeding_id`, `parcel_id`, and `event_count` describe the filing result.
+
+Do not add category totals and label the sum unique properties. One property can appear in more than one category or sale event. Counts and pages can change between requests as source inventory changes.
+
+## Coverage and freshness
+
+Use [List sources](/api-reference/list-sources) with a `category` to discover coverage and supported filters. Trustee, sheriff, and tax-sale discovery describes configured coverage, not current inventory or complete county coverage. Delinquency discovery reports published source metadata. Filing discovery includes only sources represented in eligible current inventory.
+
+A valid query with no matching records returns `200` with an empty list and zero total. A reader that cannot establish availability returns `503`. Expired, held, or privacy-suppressed records remain subject to the category's publication rules. An unavailable or missing listing does not imply that a sale completed or a delinquent balance was paid.
+
+## Compatibility
+
+The existing `/properties/search`, `/properties/data`, `/properties/counts`, and unfiltered `/sources` responses retain their behavior. The existing `pre_foreclosure=true` filter still selects scheduled-sale preforeclosures and does not include early filings without a known sale date.
+
+New category searches return normalized records automatically, support browsing without a location filter, and reject unsupported filters. Sale searches accept repeated state, county, ZIP, and address filters. Delinquency and filing filters are scalar. Source IDs in category discovery describe that category; they are not automatically valid inputs to the legacy `/properties/data` endpoint. Only filing search currently accepts a category `source` filter.

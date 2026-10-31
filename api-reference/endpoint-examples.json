@@ -3,8 +3,15 @@
     "id": "list-sources",
     "method": "GET",
     "path": "/v1/sources",
-    "description": "List all available data sources with their coverage and supported filters. coverage is one of national (all US states), regional (a subset of states), state (one state), or county (one county). states lists the USPS codes covered; it is null for national feeds and for regional feeds whose footprint varies - query /v1/properties/data with the state filter to enumerate those.",
-    "params": [],
+    "description": "Discover property feeds or category inventory. coverage_basis distinguishes configured coverage from published delinquency metadata and sources represented in current eligible filings. Configured coverage does not guarantee current records or complete county coverage.",
+    "params": [
+      {
+        "name": "category",
+        "type": "string",
+        "required": false,
+        "description": "Optional category. Omit for the original property feed catalog. Supply one category and no other parameters."
+      }
+    ],
     "examples": {
       "curl": "curl -H \"x-api-key: fdh_ak_your_key_here\" \\\n  https://www.foreclosuredatahub.com/api/v1/sources",
       "javascript": "const res = await fetch(\n  \"https://www.foreclosuredatahub.com/api/v1/sources\",\n  { headers: { \"x-api-key\": \"fdh_ak_your_key_here\" } }\n);\nconst data = await res.json();",
@@ -22,7 +29,7 @@
         "name": "limit",
         "type": "integer",
         "required": false,
-        "description": "Total listing rows across all groups: 1–100 paid or 1–10 during a new trial. Defaults to 25 when paid or 10 during a new trial. Choose a value within your remaining allowance."
+        "description": "Total listing rows across all groups: 1\u2013100 paid or 1\u201310 during a new trial. Defaults to 25 when paid or 10 during a new trial. Choose a value within your remaining allowance."
       },
       {
         "name": "mode",
@@ -156,13 +163,13 @@
         "name": "sale_days",
         "type": "integer",
         "required": false,
-        "description": "Minimum lead time: sale_date_parsed must be later than today + N days (integer 1-365, unbounded above). ANDs with sale_date_start/sale_date_end. Listings without a parsed sale date stay included — an unscheduled sale cannot violate the bound. Unified mode only."
+        "description": "Minimum lead time: sale_date_parsed must be later than today + N days (integer 1-365, unbounded above). ANDs with sale_date_start/sale_date_end. Listings without a parsed sale date stay included \u2014 an unscheduled sale cannot violate the bound. Unified mode only."
       },
       {
         "name": "sale_status",
         "type": "string",
         "required": false,
-        "description": "Canonical sale-status group: active, coming-soon, for-sale, postponed, cancelled, price-reduced, back-to-bank, new-listing, sold, mortgage-foreclosure, outbid, preview, pending, hard-to-sell, nos, vacant-lot, sale-held, none. Groups merge clearly-equivalent feed statuses — e.g. cancelled covers Cancelled/WITHDRAWN/Sale Invalid, sold covers Sold/Completed/3rd-party variants, postponed covers postpone*/On Hold. none matches listings with no reported status. Unified mode only."
+        "description": "Canonical sale-status group: active, coming-soon, for-sale, postponed, cancelled, price-reduced, back-to-bank, new-listing, sold, mortgage-foreclosure, outbid, preview, pending, hard-to-sell, nos, vacant-lot, sale-held, none. Groups merge clearly-equivalent feed statuses \u2014 e.g. cancelled covers Cancelled/WITHDRAWN/Sale Invalid, sold covers Sold/Completed/3rd-party variants, postponed covers postpone*/On Hold. none matches listings with no reported status. Unified mode only."
       },
       {
         "name": "owner_name",
@@ -192,7 +199,7 @@
         "name": "page_size",
         "type": "integer",
         "required": false,
-        "description": "Results per page, 1–100 for paid keys or 1–10 for new trials. Defaults to 25 paid or 10 during a trial. Your remaining allowance may lower an omitted first-page size."
+        "description": "Results per page, 1\u2013100 for paid keys or 1\u201310 for new trials. Defaults to 25 paid or 10 during a trial. Your remaining allowance may lower an omitted first-page size."
       }
     ],
     "examples": {
@@ -224,7 +231,7 @@
         "name": "per_page",
         "type": "integer",
         "required": false,
-        "description": "Results per page, 1–100 paid or 1–10 during a new trial. Defaults to 25 when paid or 10 during a new trial."
+        "description": "Results per page, 1\u2013100 paid or 1\u201310 during a new trial. Defaults to 25 when paid or 10 during a new trial."
       },
       {
         "name": "start_date",
@@ -307,5 +314,811 @@
       "python": "import requests\n\nres = requests.get(\n    \"https://www.foreclosuredatahub.com/api/v1/properties/counts\",\n    headers={\"x-api-key\": \"fdh_ak_...\"},\n    params={\"start_date\": \"2026-03-15\", \"end_date\": \"2026-03-22\"}\n)\ndata = res.json()"
     },
     "response": "{\n  \"data\": {\n    \"start_date\": \"2026-03-15\",\n    \"end_date\": \"2026-03-22\",\n    \"sources\": [\n      {\n        \"id\": \"feed-01\",\n        \"name\": \"Data Feed 01\",\n        \"count\": 523\n      },\n      ...\n    ],\n    \"total\": 4821\n  }\n}"
+  },
+  {
+    "id": "trustee-sales-search",
+    "method": "GET",
+    "path": "/v1/trustee-sales/search",
+    "description": "Trustee Sales returns the classified dashboard inventory. Omit sale_status for all dates and statuses; use trustee-upcoming for qualified upcoming sales. The nullable trustee_status, trustee_today and trustee_upcoming fields are populated when supplied by the selected status projection. Unknown parameters and repeated scalar parameters return 400. No location filter is required. Delivered records consume applicable row allowances.",
+    "params": [
+      {
+        "name": "state",
+        "type": "array",
+        "required": false,
+        "description": "US state name or abbreviation. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "county",
+        "type": "array",
+        "required": false,
+        "description": "Partial county name. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "zip",
+        "type": "array",
+        "required": false,
+        "description": "Property ZIP prefix. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "address",
+        "type": "array",
+        "required": false,
+        "description": "Partial property address. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "sale_date_start",
+        "type": "string",
+        "required": false,
+        "description": "Inclusive sale date start, YYYY-MM-DD."
+      },
+      {
+        "name": "sale_date_end",
+        "type": "string",
+        "required": false,
+        "description": "Inclusive sale date end, YYYY-MM-DD."
+      },
+      {
+        "name": "sale_days",
+        "type": "integer",
+        "required": false,
+        "description": "Minimum sale lead time, 1 to 365 days. Tax sales require a known date and use local sale days. Trustee and sheriff searches retain undated rows unless another date filter excludes them."
+      },
+      {
+        "name": "sale_status",
+        "type": "string",
+        "required": false,
+        "description": "Canonical status group, including trustee-upcoming, trustee-active and trustee-unconfirmed. Omit for all trustee statuses and dates."
+      },
+      {
+        "name": "owner_name",
+        "type": "string",
+        "required": false,
+        "description": "Partial published owner name."
+      },
+      {
+        "name": "est_value_min",
+        "type": "number",
+        "required": false,
+        "description": "Minimum estimated value."
+      },
+      {
+        "name": "est_value_max",
+        "type": "number",
+        "required": false,
+        "description": "Maximum estimated value."
+      },
+      {
+        "name": "pre_foreclosure",
+        "type": "string",
+        "required": false,
+        "description": "Scheduled-sale preforeclosure filter; does not search early filing events."
+      },
+      {
+        "name": "page",
+        "type": "integer",
+        "required": false,
+        "description": "Page number, starting at 1. Keep page_size fixed while paging."
+      },
+      {
+        "name": "page_size",
+        "type": "integer",
+        "required": false,
+        "description": "Rows per page: 1 to 100 paid, 1 to 10 trial. Defaults to 25 paid or 10 trial. An omitted first-page size may shrink to the remaining allowance."
+      },
+      {
+        "name": "limit",
+        "type": "integer",
+        "required": false,
+        "description": "Alias for page_size; values must match when both are supplied."
+      }
+    ],
+    "examples": {
+      "curl": "curl --fail-with-body -H \"x-api-key: $FDH_API_KEY\" \\\n  \"https://www.foreclosuredatahub.com/api/v1/trustee-sales/search?state=CA&sale_status=trustee-upcoming&page_size=5\"",
+      "javascript": "const response = await fetch(\n  \"https://www.foreclosuredatahub.com/api/v1/trustee-sales/search?state=CA&sale_status=trustee-upcoming&page_size=5\",\n  { headers: { \"x-api-key\": process.env.FDH_API_KEY } }\n);\nif (!response.ok) throw new Error(`API request failed: ${response.status}`);\nconst result = await response.json();",
+      "python": "import os\nimport requests\n\nresponse = requests.get(\n    \"https://www.foreclosuredatahub.com/api/v1/trustee-sales/search?state=CA&sale_status=trustee-upcoming&page_size=5\",\n    headers={\"x-api-key\": os.environ[\"FDH_API_KEY\"]},\n    timeout=60,\n)\nresponse.raise_for_status()\nresult = response.json()"
+    },
+    "response": "{\n  \"data\": {\n    \"records\": [\n      {\n        \"source\": \"feed-22\",\n        \"row_id\": \"example-trustee-1\",\n        \"scraped_at\": null,\n        \"scraped_at_ts\": null,\n        \"address\": \"123 Example St\",\n        \"city\": null,\n        \"state\": \"CA\",\n        \"zip\": null,\n        \"county\": \"Example\",\n        \"sale_date\": \"2026-12-01\",\n        \"bid_amount\": null,\n        \"owner_first_name\": null,\n        \"owner_last_name\": null,\n        \"bedrooms\": null,\n        \"bathrooms\": null,\n        \"sqft\": null,\n        \"year_built\": null,\n        \"property_type\": null,\n        \"lot_size\": null,\n        \"zillow_link\": null,\n        \"zestimate\": null,\n        \"file_number\": null,\n        \"sale_date_parsed\": \"2026-12-01\",\n        \"sale_status\": \"Active\",\n        \"sale_status_group\": \"active\",\n        \"zestimate_numeric\": null,\n        \"latitude\": null,\n        \"longitude\": null,\n        \"building_type\": null,\n        \"build_quality\": null,\n        \"num_bedrooms\": null,\n        \"living_sqft\": null,\n        \"assessor_year_built\": null,\n        \"land_use\": null,\n        \"last_sold_price\": null,\n        \"last_sold_price_numeric\": null,\n        \"last_sold_date\": null,\n        \"mortgage_amount\": null,\n        \"mortgage_amount_numeric\": null,\n        \"mortgage_date\": null,\n        \"mortgage_term\": null,\n        \"mortgage_maturity_date\": null,\n        \"lender_name\": null,\n        \"estimated_equity\": null,\n        \"category\": \"trustee-sales\",\n        \"trustee_status\": \"upcoming\",\n        \"trustee_today\": \"2026-10-30\",\n        \"trustee_upcoming\": true\n      }\n    ]\n  },\n  \"meta\": {\n    \"category\": \"trustee-sales\",\n    \"unit\": \"sale_listings\",\n    \"total\": 1,\n    \"page\": 1,\n    \"per_page\": 5,\n    \"total_pages\": 1\n  }\n}"
+  },
+  {
+    "id": "trustee-sales-counts",
+    "method": "GET",
+    "path": "/v1/trustee-sales/counts",
+    "description": "Count matching trustee sales with the same filters and eligibility as search. Counting unit: sale_listings. Unknown parameters and repeated scalar parameters return 400. No location filter is required. Counts consume requests but no delivered rows; pagination parameters are not accepted.",
+    "params": [
+      {
+        "name": "state",
+        "type": "array",
+        "required": false,
+        "description": "US state name or abbreviation. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "county",
+        "type": "array",
+        "required": false,
+        "description": "Partial county name. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "zip",
+        "type": "array",
+        "required": false,
+        "description": "Property ZIP prefix. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "address",
+        "type": "array",
+        "required": false,
+        "description": "Partial property address. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "sale_date_start",
+        "type": "string",
+        "required": false,
+        "description": "Inclusive sale date start, YYYY-MM-DD."
+      },
+      {
+        "name": "sale_date_end",
+        "type": "string",
+        "required": false,
+        "description": "Inclusive sale date end, YYYY-MM-DD."
+      },
+      {
+        "name": "sale_days",
+        "type": "integer",
+        "required": false,
+        "description": "Minimum sale lead time, 1 to 365 days. Tax sales require a known date and use local sale days. Trustee and sheriff searches retain undated rows unless another date filter excludes them."
+      },
+      {
+        "name": "sale_status",
+        "type": "string",
+        "required": false,
+        "description": "Canonical status group, including trustee-upcoming, trustee-active and trustee-unconfirmed. Omit for all trustee statuses and dates."
+      },
+      {
+        "name": "owner_name",
+        "type": "string",
+        "required": false,
+        "description": "Partial published owner name."
+      },
+      {
+        "name": "est_value_min",
+        "type": "number",
+        "required": false,
+        "description": "Minimum estimated value."
+      },
+      {
+        "name": "est_value_max",
+        "type": "number",
+        "required": false,
+        "description": "Maximum estimated value."
+      },
+      {
+        "name": "pre_foreclosure",
+        "type": "string",
+        "required": false,
+        "description": "Scheduled-sale preforeclosure filter; does not search early filing events."
+      }
+    ],
+    "examples": {
+      "curl": "curl --fail-with-body -H \"x-api-key: $FDH_API_KEY\" \\\n  \"https://www.foreclosuredatahub.com/api/v1/trustee-sales/counts?state=CA&sale_status=trustee-upcoming\"",
+      "javascript": "const response = await fetch(\n  \"https://www.foreclosuredatahub.com/api/v1/trustee-sales/counts?state=CA&sale_status=trustee-upcoming\",\n  { headers: { \"x-api-key\": process.env.FDH_API_KEY } }\n);\nif (!response.ok) throw new Error(`API request failed: ${response.status}`);\nconst result = await response.json();",
+      "python": "import os\nimport requests\n\nresponse = requests.get(\n    \"https://www.foreclosuredatahub.com/api/v1/trustee-sales/counts?state=CA&sale_status=trustee-upcoming\",\n    headers={\"x-api-key\": os.environ[\"FDH_API_KEY\"]},\n    timeout=60,\n)\nresponse.raise_for_status()\nresult = response.json()"
+    },
+    "response": "{\n  \"data\": {\n    \"category\": \"trustee-sales\",\n    \"unit\": \"sale_listings\",\n    \"total\": 0\n  }\n}"
+  },
+  {
+    "id": "sheriff-sales-search",
+    "method": "GET",
+    "path": "/v1/sheriff-sales/search",
+    "description": "Sheriff Sales returns qualified sheriff-administered mortgage sale listings, preserving authority and legal basis. Customer-facing scheduled statuses are returned as Scheduled. Owner, valuation and generic sale-status filters are unsupported. Unknown parameters and repeated scalar parameters return 400. No location filter is required. Delivered records consume applicable row allowances.",
+    "params": [
+      {
+        "name": "state",
+        "type": "array",
+        "required": false,
+        "description": "US state name or abbreviation. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "county",
+        "type": "array",
+        "required": false,
+        "description": "Partial county name. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "zip",
+        "type": "array",
+        "required": false,
+        "description": "Property ZIP prefix. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "address",
+        "type": "array",
+        "required": false,
+        "description": "Partial property address. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "sale_date_start",
+        "type": "string",
+        "required": false,
+        "description": "Inclusive sale date start, YYYY-MM-DD."
+      },
+      {
+        "name": "sale_date_end",
+        "type": "string",
+        "required": false,
+        "description": "Inclusive sale date end, YYYY-MM-DD."
+      },
+      {
+        "name": "sale_days",
+        "type": "integer",
+        "required": false,
+        "description": "Minimum sale lead time, 1 to 365 days. Tax sales require a known date and use local sale days. Trustee and sheriff searches retain undated rows unless another date filter excludes them."
+      },
+      {
+        "name": "q",
+        "type": "string",
+        "required": false,
+        "description": "Search parcel, case, writ, or auction identifiers."
+      },
+      {
+        "name": "page",
+        "type": "integer",
+        "required": false,
+        "description": "Page number, starting at 1. Keep page_size fixed while paging."
+      },
+      {
+        "name": "page_size",
+        "type": "integer",
+        "required": false,
+        "description": "Rows per page: 1 to 100 paid, 1 to 10 trial. Defaults to 25 paid or 10 trial. An omitted first-page size may shrink to the remaining allowance."
+      },
+      {
+        "name": "limit",
+        "type": "integer",
+        "required": false,
+        "description": "Alias for page_size; values must match when both are supplied."
+      }
+    ],
+    "examples": {
+      "curl": "curl --fail-with-body -H \"x-api-key: $FDH_API_KEY\" \\\n  \"https://www.foreclosuredatahub.com/api/v1/sheriff-sales/search?state=PA&county=Philadelphia&page_size=5\"",
+      "javascript": "const response = await fetch(\n  \"https://www.foreclosuredatahub.com/api/v1/sheriff-sales/search?state=PA&county=Philadelphia&page_size=5\",\n  { headers: { \"x-api-key\": process.env.FDH_API_KEY } }\n);\nif (!response.ok) throw new Error(`API request failed: ${response.status}`);\nconst result = await response.json();",
+      "python": "import os\nimport requests\n\nresponse = requests.get(\n    \"https://www.foreclosuredatahub.com/api/v1/sheriff-sales/search?state=PA&county=Philadelphia&page_size=5\",\n    headers={\"x-api-key\": os.environ[\"FDH_API_KEY\"]},\n    timeout=60,\n)\nresponse.raise_for_status()\nresult = response.json()"
+    },
+    "response": "{\n  \"data\": {\n    \"records\": [\n      {\n        \"source\": \"sheriff_sales\",\n        \"row_id\": \"example-sheriff-1\",\n        \"scraped_at\": null,\n        \"scraped_at_ts\": null,\n        \"address\": \"123 Example St\",\n        \"city\": null,\n        \"state\": \"PA\",\n        \"zip\": null,\n        \"county\": \"Philadelphia\",\n        \"sale_date\": \"2026-12-01\",\n        \"bid_amount\": null,\n        \"owner_first_name\": null,\n        \"owner_last_name\": null,\n        \"bedrooms\": null,\n        \"bathrooms\": null,\n        \"sqft\": null,\n        \"year_built\": null,\n        \"property_type\": null,\n        \"lot_size\": null,\n        \"zillow_link\": null,\n        \"zestimate\": null,\n        \"file_number\": null,\n        \"sale_date_parsed\": \"2026-12-01\",\n        \"sale_status\": \"Scheduled\",\n        \"sale_status_group\": \"active\",\n        \"zestimate_numeric\": null,\n        \"latitude\": null,\n        \"longitude\": null,\n        \"building_type\": null,\n        \"build_quality\": null,\n        \"num_bedrooms\": null,\n        \"living_sqft\": null,\n        \"assessor_year_built\": null,\n        \"land_use\": null,\n        \"last_sold_price\": null,\n        \"last_sold_price_numeric\": null,\n        \"last_sold_date\": null,\n        \"mortgage_amount\": null,\n        \"mortgage_amount_numeric\": null,\n        \"mortgage_date\": null,\n        \"mortgage_term\": null,\n        \"mortgage_maturity_date\": null,\n        \"lender_name\": null,\n        \"estimated_equity\": null,\n        \"category\": \"sheriff-sales\",\n        \"sheriff_source\": \"example_county\",\n        \"sheriff_parcel\": \"EXAMPLE-001\",\n        \"sheriff_auction_id\": null,\n        \"sheriff_source_url\": null,\n        \"sheriff_expires_at\": null,\n        \"sheriff_authority\": \"sheriff\",\n        \"sheriff_legal_basis\": \"mortgage_foreclosure\"\n      }\n    ]\n  },\n  \"meta\": {\n    \"category\": \"sheriff-sales\",\n    \"unit\": \"sale_listings\",\n    \"total\": 1,\n    \"page\": 1,\n    \"per_page\": 5,\n    \"total_pages\": 1\n  }\n}"
+  },
+  {
+    "id": "sheriff-sales-counts",
+    "method": "GET",
+    "path": "/v1/sheriff-sales/counts",
+    "description": "Count matching sheriff sales with the same filters and eligibility as search. Counting unit: sale_listings. Unknown parameters and repeated scalar parameters return 400. No location filter is required. Counts consume requests but no delivered rows; pagination parameters are not accepted.",
+    "params": [
+      {
+        "name": "state",
+        "type": "array",
+        "required": false,
+        "description": "US state name or abbreviation. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "county",
+        "type": "array",
+        "required": false,
+        "description": "Partial county name. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "zip",
+        "type": "array",
+        "required": false,
+        "description": "Property ZIP prefix. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "address",
+        "type": "array",
+        "required": false,
+        "description": "Partial property address. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "sale_date_start",
+        "type": "string",
+        "required": false,
+        "description": "Inclusive sale date start, YYYY-MM-DD."
+      },
+      {
+        "name": "sale_date_end",
+        "type": "string",
+        "required": false,
+        "description": "Inclusive sale date end, YYYY-MM-DD."
+      },
+      {
+        "name": "sale_days",
+        "type": "integer",
+        "required": false,
+        "description": "Minimum sale lead time, 1 to 365 days. Tax sales require a known date and use local sale days. Trustee and sheriff searches retain undated rows unless another date filter excludes them."
+      },
+      {
+        "name": "q",
+        "type": "string",
+        "required": false,
+        "description": "Search parcel, case, writ, or auction identifiers."
+      }
+    ],
+    "examples": {
+      "curl": "curl --fail-with-body -H \"x-api-key: $FDH_API_KEY\" \\\n  \"https://www.foreclosuredatahub.com/api/v1/sheriff-sales/counts?state=PA&county=Philadelphia\"",
+      "javascript": "const response = await fetch(\n  \"https://www.foreclosuredatahub.com/api/v1/sheriff-sales/counts?state=PA&county=Philadelphia\",\n  { headers: { \"x-api-key\": process.env.FDH_API_KEY } }\n);\nif (!response.ok) throw new Error(`API request failed: ${response.status}`);\nconst result = await response.json();",
+      "python": "import os\nimport requests\n\nresponse = requests.get(\n    \"https://www.foreclosuredatahub.com/api/v1/sheriff-sales/counts?state=PA&county=Philadelphia\",\n    headers={\"x-api-key\": os.environ[\"FDH_API_KEY\"]},\n    timeout=60,\n)\nresponse.raise_for_status()\nresult = response.json()"
+    },
+    "response": "{\n  \"data\": {\n    \"category\": \"sheriff-sales\",\n    \"unit\": \"sale_listings\",\n    \"total\": 0\n  }\n}"
+  },
+  {
+    "id": "tax-sales-search",
+    "method": "GET",
+    "path": "/v1/tax-sales/search",
+    "description": "Tax Sales includes tax deeds, redeemable deeds, tax lien certificates and published available inventory. A row is a sale lot and may contain several parcels. The default tax_status=all includes undated available records. Date filters exclude undated records; missing bids do not match bid ranges. Unknown parameters and repeated scalar parameters return 400. No location filter is required. Delivered records consume applicable row allowances.",
+    "params": [
+      {
+        "name": "state",
+        "type": "array",
+        "required": false,
+        "description": "US state name or abbreviation. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "county",
+        "type": "array",
+        "required": false,
+        "description": "Partial county name. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "zip",
+        "type": "array",
+        "required": false,
+        "description": "Property ZIP prefix. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "address",
+        "type": "array",
+        "required": false,
+        "description": "Partial property address. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "sale_date_start",
+        "type": "string",
+        "required": false,
+        "description": "Inclusive sale date start, YYYY-MM-DD."
+      },
+      {
+        "name": "sale_date_end",
+        "type": "string",
+        "required": false,
+        "description": "Inclusive sale date end, YYYY-MM-DD."
+      },
+      {
+        "name": "sale_days",
+        "type": "integer",
+        "required": false,
+        "description": "Minimum sale lead time, 1 to 365 days. Tax sales require a known date and use local sale days. Trustee and sheriff searches retain undated rows unless another date filter excludes them."
+      },
+      {
+        "name": "owner_name",
+        "type": "string",
+        "required": false,
+        "description": "Partial published owner name."
+      },
+      {
+        "name": "tax_sale_type",
+        "type": "string",
+        "required": false,
+        "description": "Type of tax sale or interest."
+      },
+      {
+        "name": "tax_status",
+        "type": "string",
+        "required": false,
+        "description": "all includes undated available inventory; upcoming selects qualified upcoming sales."
+      },
+      {
+        "name": "minimum_bid_min",
+        "type": "number",
+        "required": false,
+        "description": "Minimum published minimum bid; unknown bids do not match."
+      },
+      {
+        "name": "minimum_bid_max",
+        "type": "number",
+        "required": false,
+        "description": "Maximum published minimum bid; unknown bids do not match."
+      },
+      {
+        "name": "q",
+        "type": "string",
+        "required": false,
+        "description": "Search parcel and case identifiers."
+      },
+      {
+        "name": "page",
+        "type": "integer",
+        "required": false,
+        "description": "Page number, starting at 1. Keep page_size fixed while paging."
+      },
+      {
+        "name": "page_size",
+        "type": "integer",
+        "required": false,
+        "description": "Rows per page: 1 to 100 paid, 1 to 10 trial. Defaults to 25 paid or 10 trial. An omitted first-page size may shrink to the remaining allowance."
+      },
+      {
+        "name": "limit",
+        "type": "integer",
+        "required": false,
+        "description": "Alias for page_size; values must match when both are supplied."
+      }
+    ],
+    "examples": {
+      "curl": "curl --fail-with-body -H \"x-api-key: $FDH_API_KEY\" \\\n  \"https://www.foreclosuredatahub.com/api/v1/tax-sales/search?state=SC&tax_status=all&page_size=5\"",
+      "javascript": "const response = await fetch(\n  \"https://www.foreclosuredatahub.com/api/v1/tax-sales/search?state=SC&tax_status=all&page_size=5\",\n  { headers: { \"x-api-key\": process.env.FDH_API_KEY } }\n);\nif (!response.ok) throw new Error(`API request failed: ${response.status}`);\nconst result = await response.json();",
+      "python": "import os\nimport requests\n\nresponse = requests.get(\n    \"https://www.foreclosuredatahub.com/api/v1/tax-sales/search?state=SC&tax_status=all&page_size=5\",\n    headers={\"x-api-key\": os.environ[\"FDH_API_KEY\"]},\n    timeout=60,\n)\nresponse.raise_for_status()\nresult = response.json()"
+    },
+    "response": "{\n  \"data\": {\n    \"records\": [\n      {\n        \"source\": \"tax_sales\",\n        \"row_id\": \"example-tax-1\",\n        \"scraped_at\": null,\n        \"scraped_at_ts\": null,\n        \"address\": \"123 Example St\",\n        \"city\": null,\n        \"state\": \"SC\",\n        \"zip\": null,\n        \"county\": \"Example\",\n        \"sale_date\": \"2026-12-01\",\n        \"bid_amount\": null,\n        \"owner_first_name\": null,\n        \"owner_last_name\": null,\n        \"bedrooms\": null,\n        \"bathrooms\": null,\n        \"sqft\": null,\n        \"year_built\": null,\n        \"property_type\": null,\n        \"lot_size\": null,\n        \"zillow_link\": null,\n        \"zestimate\": null,\n        \"file_number\": null,\n        \"sale_date_parsed\": \"2026-12-01\",\n        \"sale_status\": \"scheduled\",\n        \"sale_status_group\": \"active\",\n        \"zestimate_numeric\": null,\n        \"latitude\": null,\n        \"longitude\": null,\n        \"building_type\": null,\n        \"build_quality\": null,\n        \"num_bedrooms\": null,\n        \"living_sqft\": null,\n        \"assessor_year_built\": null,\n        \"land_use\": null,\n        \"last_sold_price\": null,\n        \"last_sold_price_numeric\": null,\n        \"last_sold_date\": null,\n        \"mortgage_amount\": null,\n        \"mortgage_amount_numeric\": null,\n        \"mortgage_date\": null,\n        \"mortgage_term\": null,\n        \"mortgage_maturity_date\": null,\n        \"lender_name\": null,\n        \"estimated_equity\": null,\n        \"category\": \"tax-sales\",\n        \"tax_sale_type\": \"tax_deed\",\n        \"tax_status\": \"scheduled\",\n        \"tax_parcels\": [\n          \"EXAMPLE-001\",\n          \"EXAMPLE-002\"\n        ],\n        \"tax_case\": null,\n        \"tax_minimum_bid\": 1500,\n        \"tax_delinquent_amount\": null,\n        \"tax_certificate\": null,\n        \"tax_holder\": null,\n        \"tax_legal_description\": null,\n        \"tax_location_description\": null,\n        \"tax_source_url\": null,\n        \"tax_source_updated_at\": null,\n        \"tax_captured_at\": null,\n        \"tax_expires_at\": null,\n        \"tax_time_zone\": \"America/New_York\",\n        \"tax_sale_time\": null,\n        \"tax_interest\": null,\n        \"tax_upcoming\": true,\n        \"tax_days_until_sale\": 32,\n        \"tax_address_provenance\": null\n      }\n    ]\n  },\n  \"meta\": {\n    \"category\": \"tax-sales\",\n    \"unit\": \"sale_lots\",\n    \"total\": 1,\n    \"page\": 1,\n    \"per_page\": 5,\n    \"total_pages\": 1\n  }\n}"
+  },
+  {
+    "id": "tax-sales-counts",
+    "method": "GET",
+    "path": "/v1/tax-sales/counts",
+    "description": "Count matching tax sales with the same filters and eligibility as search. Counting unit: sale_lots. Unknown parameters and repeated scalar parameters return 400. No location filter is required. Counts consume requests but no delivered rows; pagination parameters are not accepted.",
+    "params": [
+      {
+        "name": "state",
+        "type": "array",
+        "required": false,
+        "description": "US state name or abbreviation. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "county",
+        "type": "array",
+        "required": false,
+        "description": "Partial county name. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "zip",
+        "type": "array",
+        "required": false,
+        "description": "Property ZIP prefix. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "address",
+        "type": "array",
+        "required": false,
+        "description": "Partial property address. Repeat for multiple values, at most 50."
+      },
+      {
+        "name": "sale_date_start",
+        "type": "string",
+        "required": false,
+        "description": "Inclusive sale date start, YYYY-MM-DD."
+      },
+      {
+        "name": "sale_date_end",
+        "type": "string",
+        "required": false,
+        "description": "Inclusive sale date end, YYYY-MM-DD."
+      },
+      {
+        "name": "sale_days",
+        "type": "integer",
+        "required": false,
+        "description": "Minimum sale lead time, 1 to 365 days. Tax sales require a known date and use local sale days. Trustee and sheriff searches retain undated rows unless another date filter excludes them."
+      },
+      {
+        "name": "owner_name",
+        "type": "string",
+        "required": false,
+        "description": "Partial published owner name."
+      },
+      {
+        "name": "tax_sale_type",
+        "type": "string",
+        "required": false,
+        "description": "Type of tax sale or interest."
+      },
+      {
+        "name": "tax_status",
+        "type": "string",
+        "required": false,
+        "description": "all includes undated available inventory; upcoming selects qualified upcoming sales."
+      },
+      {
+        "name": "minimum_bid_min",
+        "type": "number",
+        "required": false,
+        "description": "Minimum published minimum bid; unknown bids do not match."
+      },
+      {
+        "name": "minimum_bid_max",
+        "type": "number",
+        "required": false,
+        "description": "Maximum published minimum bid; unknown bids do not match."
+      },
+      {
+        "name": "q",
+        "type": "string",
+        "required": false,
+        "description": "Search parcel and case identifiers."
+      }
+    ],
+    "examples": {
+      "curl": "curl --fail-with-body -H \"x-api-key: $FDH_API_KEY\" \\\n  \"https://www.foreclosuredatahub.com/api/v1/tax-sales/counts?state=SC&tax_status=all\"",
+      "javascript": "const response = await fetch(\n  \"https://www.foreclosuredatahub.com/api/v1/tax-sales/counts?state=SC&tax_status=all\",\n  { headers: { \"x-api-key\": process.env.FDH_API_KEY } }\n);\nif (!response.ok) throw new Error(`API request failed: ${response.status}`);\nconst result = await response.json();",
+      "python": "import os\nimport requests\n\nresponse = requests.get(\n    \"https://www.foreclosuredatahub.com/api/v1/tax-sales/counts?state=SC&tax_status=all\",\n    headers={\"x-api-key\": os.environ[\"FDH_API_KEY\"]},\n    timeout=60,\n)\nresponse.raise_for_status()\nresult = response.json()"
+    },
+    "response": "{\n  \"data\": {\n    \"category\": \"tax-sales\",\n    \"unit\": \"sale_lots\",\n    \"total\": 0\n  }\n}"
+  },
+  {
+    "id": "tax-delinquent-search",
+    "method": "GET",
+    "path": "/v1/tax-delinquent/search",
+    "description": "Tax Delinquency returns published delinquent property/account records. Read amount_kind with reported_balance; published_total is separate and nullable. These records do not imply an auction date. Starting offsets are limited to 500,000, including the second block of pages larger than 50 rows. Unknown parameters and repeated scalar parameters return 400. No location filter is required. Delivered records consume applicable row allowances.",
+    "params": [
+      {
+        "name": "state",
+        "type": "string",
+        "required": false,
+        "description": "US state name or abbreviation."
+      },
+      {
+        "name": "county",
+        "type": "string",
+        "required": false,
+        "description": "Exact county name, case-insensitive."
+      },
+      {
+        "name": "field",
+        "type": "string",
+        "required": false,
+        "description": "Delinquency field searched by q. Parcel also searches account aliases."
+      },
+      {
+        "name": "q",
+        "type": "string",
+        "required": false,
+        "description": "Search the selected field; parcel also searches account aliases."
+      },
+      {
+        "name": "minimum",
+        "type": "number",
+        "required": false,
+        "description": "Minimum reported delinquent balance."
+      },
+      {
+        "name": "maximum",
+        "type": "number",
+        "required": false,
+        "description": "Maximum reported delinquent balance."
+      },
+      {
+        "name": "page",
+        "type": "integer",
+        "required": false,
+        "description": "Page number, starting at 1. Keep page_size fixed while paging."
+      },
+      {
+        "name": "page_size",
+        "type": "integer",
+        "required": false,
+        "description": "Rows per page: 1 to 100 paid, 1 to 10 trial. Defaults to 25 paid or 10 trial. An omitted first-page size may shrink to the remaining allowance."
+      },
+      {
+        "name": "limit",
+        "type": "integer",
+        "required": false,
+        "description": "Alias for page_size; values must match when both are supplied."
+      }
+    ],
+    "examples": {
+      "curl": "curl --fail-with-body -H \"x-api-key: $FDH_API_KEY\" \\\n  \"https://www.foreclosuredatahub.com/api/v1/tax-delinquent/search?state=TX&field=owner&q=Example&page_size=5\"",
+      "javascript": "const response = await fetch(\n  \"https://www.foreclosuredatahub.com/api/v1/tax-delinquent/search?state=TX&field=owner&q=Example&page_size=5\",\n  { headers: { \"x-api-key\": process.env.FDH_API_KEY } }\n);\nif (!response.ok) throw new Error(`API request failed: ${response.status}`);\nconst result = await response.json();",
+      "python": "import os\nimport requests\n\nresponse = requests.get(\n    \"https://www.foreclosuredatahub.com/api/v1/tax-delinquent/search?state=TX&field=owner&q=Example&page_size=5\",\n    headers={\"x-api-key\": os.environ[\"FDH_API_KEY\"]},\n    timeout=60,\n)\nresponse.raise_for_status()\nresult = response.json()"
+    },
+    "response": "{\n  \"data\": {\n    \"records\": [\n      {\n        \"category\": \"tax-delinquent\",\n        \"source\": \"example_county\",\n        \"row_id\": \"example-property-1\",\n        \"property_key\": \"example-property-1\",\n        \"authority\": null,\n        \"state\": \"TX\",\n        \"county\": \"Example\",\n        \"county_fips\": null,\n        \"parcel\": \"EXAMPLE-001\",\n        \"account\": null,\n        \"reported_balance\": 750,\n        \"amount_kind\": \"principal\",\n        \"published_total\": 800,\n        \"owner_name\": \"Example owner\",\n        \"address\": \"123 Example St\",\n        \"city\": null,\n        \"zip\": null,\n        \"legal_description\": null,\n        \"tax_years\": [\n          2025\n        ],\n        \"flags\": [],\n        \"source_as_of\": \"2026-10-01\",\n        \"captured_at\": null,\n        \"expires_at\": null,\n        \"source_url\": null\n      }\n    ]\n  },\n  \"meta\": {\n    \"category\": \"tax-delinquent\",\n    \"unit\": \"properties\",\n    \"total\": 1,\n    \"page\": 1,\n    \"per_page\": 5,\n    \"total_pages\": 1\n  }\n}"
+  },
+  {
+    "id": "tax-delinquent-counts",
+    "method": "GET",
+    "path": "/v1/tax-delinquent/counts",
+    "description": "Count matching tax delinquency with the same filters and eligibility as search. Counting unit: properties. Unknown parameters and repeated scalar parameters return 400. No location filter is required. Counts consume requests but no delivered rows; pagination parameters are not accepted.",
+    "params": [
+      {
+        "name": "state",
+        "type": "string",
+        "required": false,
+        "description": "US state name or abbreviation."
+      },
+      {
+        "name": "county",
+        "type": "string",
+        "required": false,
+        "description": "Exact county name, case-insensitive."
+      },
+      {
+        "name": "field",
+        "type": "string",
+        "required": false,
+        "description": "Delinquency field searched by q. Parcel also searches account aliases."
+      },
+      {
+        "name": "q",
+        "type": "string",
+        "required": false,
+        "description": "Search the selected field; parcel also searches account aliases."
+      },
+      {
+        "name": "minimum",
+        "type": "number",
+        "required": false,
+        "description": "Minimum reported delinquent balance."
+      },
+      {
+        "name": "maximum",
+        "type": "number",
+        "required": false,
+        "description": "Maximum reported delinquent balance."
+      }
+    ],
+    "examples": {
+      "curl": "curl --fail-with-body -H \"x-api-key: $FDH_API_KEY\" \\\n  \"https://www.foreclosuredatahub.com/api/v1/tax-delinquent/counts?state=TX&field=owner&q=Example\"",
+      "javascript": "const response = await fetch(\n  \"https://www.foreclosuredatahub.com/api/v1/tax-delinquent/counts?state=TX&field=owner&q=Example\",\n  { headers: { \"x-api-key\": process.env.FDH_API_KEY } }\n);\nif (!response.ok) throw new Error(`API request failed: ${response.status}`);\nconst result = await response.json();",
+      "python": "import os\nimport requests\n\nresponse = requests.get(\n    \"https://www.foreclosuredatahub.com/api/v1/tax-delinquent/counts?state=TX&field=owner&q=Example\",\n    headers={\"x-api-key\": os.environ[\"FDH_API_KEY\"]},\n    timeout=60,\n)\nresponse.raise_for_status()\nresult = response.json()"
+    },
+    "response": "{\n  \"data\": {\n    \"category\": \"tax-delinquent\",\n    \"unit\": \"properties\",\n    \"total\": 0\n  }\n}"
+  },
+  {
+    "id": "filings-search",
+    "method": "GET",
+    "path": "/v1/filings/search",
+    "description": "Early Filings returns eligible matched properties grouped by proceeding and parcel. It includes recording dates, document references, classifications and recorded parties. state filters filing jurisdiction; situs_state describes the matched property. Internal review and unresolved-match data are excluded. Unknown parameters and repeated scalar parameters return 400. No location filter is required. Delivered records consume applicable row allowances.",
+    "params": [
+      {
+        "name": "state",
+        "type": "string",
+        "required": false,
+        "description": "Filing jurisdiction as a US state name or abbreviation."
+      },
+      {
+        "name": "county",
+        "type": "string",
+        "required": false,
+        "description": "Partial county name or qualified county key such as FL:Duval."
+      },
+      {
+        "name": "source",
+        "type": "string",
+        "required": false,
+        "description": "Filing source ID from /sources?category=filings."
+      },
+      {
+        "name": "q",
+        "type": "string",
+        "required": false,
+        "description": "Search instrument, case, address, legal text, and recorded parties."
+      },
+      {
+        "name": "recorded_from",
+        "type": "string",
+        "required": false,
+        "description": "Inclusive recording date start, YYYY-MM-DD."
+      },
+      {
+        "name": "recorded_to",
+        "type": "string",
+        "required": false,
+        "description": "Inclusive recording date end, YYYY-MM-DD."
+      },
+      {
+        "name": "event_type",
+        "type": "string",
+        "required": false,
+        "description": "Recorded event type; results remain eligible property groups."
+      },
+      {
+        "name": "filing_kind",
+        "type": "string",
+        "required": false,
+        "description": "Filing classification; a candidate does not establish a completed foreclosure."
+      },
+      {
+        "name": "has_case",
+        "type": "string",
+        "required": false,
+        "description": "Require a reported case number."
+      },
+      {
+        "name": "page",
+        "type": "integer",
+        "required": false,
+        "description": "Page number, starting at 1. Keep page_size fixed while paging."
+      },
+      {
+        "name": "page_size",
+        "type": "integer",
+        "required": false,
+        "description": "Rows per page: 1 to 100 paid, 1 to 10 trial. Defaults to 25 paid or 10 trial. An omitted first-page size may shrink to the remaining allowance."
+      },
+      {
+        "name": "limit",
+        "type": "integer",
+        "required": false,
+        "description": "Alias for page_size; values must match when both are supplied."
+      }
+    ],
+    "examples": {
+      "curl": "curl --fail-with-body -H \"x-api-key: $FDH_API_KEY\" \\\n  \"https://www.foreclosuredatahub.com/api/v1/filings/search?state=FL&recorded_from=2026-10-01&page_size=5\"",
+      "javascript": "const response = await fetch(\n  \"https://www.foreclosuredatahub.com/api/v1/filings/search?state=FL&recorded_from=2026-10-01&page_size=5\",\n  { headers: { \"x-api-key\": process.env.FDH_API_KEY } }\n);\nif (!response.ok) throw new Error(`API request failed: ${response.status}`);\nconst result = await response.json();",
+      "python": "import os\nimport requests\n\nresponse = requests.get(\n    \"https://www.foreclosuredatahub.com/api/v1/filings/search?state=FL&recorded_from=2026-10-01&page_size=5\",\n    headers={\"x-api-key\": os.environ[\"FDH_API_KEY\"]},\n    timeout=60,\n)\nresponse.raise_for_status()\nresult = response.json()"
+    },
+    "response": "{\n  \"data\": {\n    \"records\": [\n      {\n        \"category\": \"filings\",\n        \"source\": \"example_recorder\",\n        \"row_id\": \"50fbb76cb8bb3aae04caad18f771a9c23c2d1232da11aa3922bbc6d36e74ae2d\",\n        \"event_id\": \"example-event-1\",\n        \"proceeding_id\": \"example-proceeding-1\",\n        \"event_type\": \"lis_pendens\",\n        \"filing_kind\": \"mortgage_foreclosure_candidate\",\n        \"county\": \"Example\",\n        \"county_key\": \"FL:Example\",\n        \"filed_at\": null,\n        \"record_date\": \"2026-10-01\",\n        \"observed_at\": null,\n        \"last_checked_at\": null,\n        \"instrument\": null,\n        \"doc_code\": null,\n        \"doc_desc\": null,\n        \"book_page\": null,\n        \"case_number\": null,\n        \"case_type\": null,\n        \"legal_text\": null,\n        \"source_url\": null,\n        \"parcel_id\": \"EXAMPLE-001\",\n        \"situs_address\": \"123 Example St\",\n        \"situs_city\": null,\n        \"situs_zip\": null,\n        \"grantors\": [\n          \"Example owner\"\n        ],\n        \"grantees\": [\n          \"Example bank\"\n        ],\n        \"property_source_date\": null,\n        \"property_source_url\": null,\n        \"event_count\": 1,\n        \"lifecycle_status\": null,\n        \"state\": \"FL\",\n        \"situs_state\": \"FL\",\n        \"attributes\": null\n      }\n    ]\n  },\n  \"meta\": {\n    \"category\": \"filings\",\n    \"unit\": \"proceeding_parcels\",\n    \"total\": 1,\n    \"page\": 1,\n    \"per_page\": 5,\n    \"total_pages\": 1\n  }\n}"
+  },
+  {
+    "id": "filings-counts",
+    "method": "GET",
+    "path": "/v1/filings/counts",
+    "description": "Count matching early filings with the same filters and eligibility as search. Counting unit: proceeding_parcels. Unknown parameters and repeated scalar parameters return 400. No location filter is required. Counts consume requests but no delivered rows; pagination parameters are not accepted.",
+    "params": [
+      {
+        "name": "state",
+        "type": "string",
+        "required": false,
+        "description": "Filing jurisdiction as a US state name or abbreviation."
+      },
+      {
+        "name": "county",
+        "type": "string",
+        "required": false,
+        "description": "Partial county name or qualified county key such as FL:Duval."
+      },
+      {
+        "name": "source",
+        "type": "string",
+        "required": false,
+        "description": "Filing source ID from /sources?category=filings."
+      },
+      {
+        "name": "q",
+        "type": "string",
+        "required": false,
+        "description": "Search instrument, case, address, legal text, and recorded parties."
+      },
+      {
+        "name": "recorded_from",
+        "type": "string",
+        "required": false,
+        "description": "Inclusive recording date start, YYYY-MM-DD."
+      },
+      {
+        "name": "recorded_to",
+        "type": "string",
+        "required": false,
+        "description": "Inclusive recording date end, YYYY-MM-DD."
+      },
+      {
+        "name": "event_type",
+        "type": "string",
+        "required": false,
+        "description": "Recorded event type; results remain eligible property groups."
+      },
+      {
+        "name": "filing_kind",
+        "type": "string",
+        "required": false,
+        "description": "Filing classification; a candidate does not establish a completed foreclosure."
+      },
+      {
+        "name": "has_case",
+        "type": "string",
+        "required": false,
+        "description": "Require a reported case number."
+      }
+    ],
+    "examples": {
+      "curl": "curl --fail-with-body -H \"x-api-key: $FDH_API_KEY\" \\\n  \"https://www.foreclosuredatahub.com/api/v1/filings/counts?state=FL&recorded_from=2026-10-01\"",
+      "javascript": "const response = await fetch(\n  \"https://www.foreclosuredatahub.com/api/v1/filings/counts?state=FL&recorded_from=2026-10-01\",\n  { headers: { \"x-api-key\": process.env.FDH_API_KEY } }\n);\nif (!response.ok) throw new Error(`API request failed: ${response.status}`);\nconst result = await response.json();",
+      "python": "import os\nimport requests\n\nresponse = requests.get(\n    \"https://www.foreclosuredatahub.com/api/v1/filings/counts?state=FL&recorded_from=2026-10-01\",\n    headers={\"x-api-key\": os.environ[\"FDH_API_KEY\"]},\n    timeout=60,\n)\nresponse.raise_for_status()\nresult = response.json()"
+    },
+    "response": "{\n  \"data\": {\n    \"category\": \"filings\",\n    \"unit\": \"proceeding_parcels\",\n    \"total\": 0\n  }\n}"
   }
 ]

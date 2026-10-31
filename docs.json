@@ -64,6 +64,7 @@
           {
             "group": "Guides",
             "pages": [
+              "guides/foreclosure-categories",
               "guides/preforeclosure-search",
               "guides/pagination",
               "guides/licensing"
@@ -83,6 +84,41 @@
               "api-reference/unified-search",
               "api-reference/single-source-data",
               "api-reference/record-counts"
+            ]
+          },
+          {
+            "group": "Trustee sales",
+            "pages": [
+              "api-reference/trustee-sales/search",
+              "api-reference/trustee-sales/counts"
+            ]
+          },
+          {
+            "group": "Sheriff sales",
+            "pages": [
+              "api-reference/sheriff-sales/search",
+              "api-reference/sheriff-sales/counts"
+            ]
+          },
+          {
+            "group": "Tax sales",
+            "pages": [
+              "api-reference/tax-sales/search",
+              "api-reference/tax-sales/counts"
+            ]
+          },
+          {
+            "group": "Tax delinquency",
+            "pages": [
+              "api-reference/tax-delinquent/search",
+              "api-reference/tax-delinquent/counts"
+            ]
+          },
+          {
+            "group": "Early filings",
+            "pages": [
+              "api-reference/filings/search",
+              "api-reference/filings/counts"
             ]
           }
         ]

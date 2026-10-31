@@ -10,6 +10,7 @@
 - [Rate limits and allowances](https://www.foreclosuredatahub.com/docs/concepts/rate-limits.md): Understand request limits, row delivery, and retry behavior.
 - [Responses and property fields](https://www.foreclosuredatahub.com/docs/concepts/responses.md): Read response envelopes, listing identities, and enrichment fields.
 - [Errors and retries](https://www.foreclosuredatahub.com/docs/concepts/errors.md): Handle authentication, validation, quota, and service errors.
+- [Choose a foreclosure data category](https://www.foreclosuredatahub.com/docs/guides/foreclosure-categories.md): Choose between trustee sales, sheriff sales, tax sales, tax delinquency, and early filings, with clear date, identity, coverage, and counting rules.
 - [Search preforeclosures](https://www.foreclosuredatahub.com/docs/guides/preforeclosure-search.md): Find listings with scheduled upcoming sales.
 - [Pagination and filtering](https://www.foreclosuredatahub.com/docs/guides/pagination.md): Retrieve bounded pages without exhausting your allowance.
 - [Commercial integrations](https://www.foreclosuredatahub.com/docs/guides/licensing.md): Choose access for internal workflows or customer-facing products.
@@ -18,6 +19,16 @@
 - [Unified search](https://www.foreclosuredatahub.com/docs/api-reference/unified-search.md): Search with mode=unified to get normalized, paginated results across all sources in a single flat list. Each record includes standardized fields (address, city, state, zip, county, sale_date, bid_amount, owner name, etc.) with a source field indicating origin.
 - [Get source data](https://www.foreclosuredatahub.com/docs/api-reference/single-source-data.md): Retrieve a paginated set of listings from one source.
 - [Get record counts](https://www.foreclosuredatahub.com/docs/api-reference/record-counts.md): Count listings by source within a date range.
+- [Search trustee sales](https://www.foreclosuredatahub.com/docs/api-reference/trustee-sales/search.md): Find trustee sales with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+- [Count trustee sales](https://www.foreclosuredatahub.com/docs/api-reference/trustee-sales/counts.md): Count trustee sales with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+- [Search sheriff sales](https://www.foreclosuredatahub.com/docs/api-reference/sheriff-sales/search.md): Find sheriff sales with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+- [Count sheriff sales](https://www.foreclosuredatahub.com/docs/api-reference/sheriff-sales/counts.md): Count sheriff sales with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+- [Search tax sales](https://www.foreclosuredatahub.com/docs/api-reference/tax-sales/search.md): Find tax sales with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+- [Count tax sales](https://www.foreclosuredatahub.com/docs/api-reference/tax-sales/counts.md): Count tax sales with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+- [Search tax delinquency](https://www.foreclosuredatahub.com/docs/api-reference/tax-delinquent/search.md): Find tax delinquency with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+- [Count tax delinquency](https://www.foreclosuredatahub.com/docs/api-reference/tax-delinquent/counts.md): Count tax delinquency with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+- [Search early filings](https://www.foreclosuredatahub.com/docs/api-reference/filings/search.md): Find early filings with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+- [Count early filings](https://www.foreclosuredatahub.com/docs/api-reference/filings/counts.md): Count early filings with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
 
 ## API specification
 

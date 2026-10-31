@@ -8,7 +8,7 @@ Source: https://www.foreclosuredatahub.com/docs
 
 Build with foreclosure, auction, and property data.
 
-Use the Foreclosure Data Hub REST API to discover data sources, search listings, retrieve source records, and track record counts.
+Use the Foreclosure Data Hub REST API to search property feeds, trustee sales, sheriff sales, tax sales, tax delinquency, and early filings. Discover category coverage, retrieve records, and track matching counts.
 
 <Info>API base URL: `https://www.foreclosuredatahub.com/api/v1`. Documentation hosting does not change your API keys or endpoint URLs.</Info>
 
@@ -42,6 +42,10 @@ Keep each listing's `source` and `row_id` for reconciliation. See the [response 
 - [Unified search](/api-reference/unified-search)
 - [Get source data](/api-reference/single-source-data)
 - [Get record counts](/api-reference/record-counts)
+
+## Category endpoints
+
+Choose a [foreclosure data category](/guides/foreclosure-categories), then use its search and counts endpoints. Category searches return normalized records with explicit record units and category-specific fields.
 
 ## Preforeclosure search
 
@@ -88,6 +92,13 @@ The response includes `data.records` and pagination in `meta`. Five rows fits th
 </Steps>
 
 <Warning>Each new property request, including a retry, can consume rows again. Check the response and quota headers before retrying.</Warning>
+
+Use [category search endpoints](/guides/foreclosure-categories) for trustee sales, sheriff sales, tax sales, tax delinquency, or early filings. For example:
+
+```bash
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/tax-sales/search?state=SC&page_size=5"
+```
 
 Continue with [pagination](/guides/pagination) or [preforeclosure search](/guides/preforeclosure-search).
 
@@ -139,6 +150,8 @@ All retail keys on an account share these limits:
 | All endpoints combined | 1,000 requests/hour |
 | New trial | 30 requests total |
 
+Category searches share the Search bucket with property search; category counts share the Counts bucket. Source discovery, including category discovery, shares the Sources bucket. Switching categories does not reset or multiply these limits.
+
 Exceeding a rate limit returns `429` with `Retry-After`.
 
 ## Retail row allowances
@@ -162,6 +175,8 @@ View current usage in [Settings → Subscription](https://www.foreclosuredatahub
 ## Commercial limits
 
 Commercial evaluations allow **50 successful calls total over three days**, **10 records per response**, and **10 requests/minute**. They do not reset monthly or convert automatically, and no card is required. Paid commercial licenses use separate monthly call allowances and allow at most 100 records per response. See [commercial licensing](https://www.foreclosuredatahub.com/data-licensing) for current tiers.
+
+All five category searches use the same retail and commercial allowances. Each returned sale, delinquency, or filing record counts as one delivered row under retail accounting. Category counts and source discovery consume requests but no delivered rows.
 
 ---
 
@@ -220,6 +235,13 @@ Raw by-source records include `Lender Name` where captured. Unified responses al
 
 `estimated_equity` is available in unified responses. It is estimated value minus the original recorded loan principal. It ignores principal paid down and secondary liens, can be negative, and is not a payoff figure.
 
+
+## Category records
+
+Category searches use `data.records` and pagination in `meta`, including `category` and `unit`. They have explicit OpenAPI schemas: `TrusteeSale`, `SheriffSale`, `TaxSale`, `TaxDelinquentProperty`, and `FilingProperty`. Category-specific fields are nullable when no value is supplied. Internal review, capture IDs, and processing metadata are excluded.
+
+Sale records retain the normalized property fields. Tax sales add parcel bundles, tax sale type/status, published bid amounts, source dates, time zone, and expiry. Sheriff sales add authority, legal basis, parcel/auction identifiers, and source expiry. Delinquency and filing records use their own amount, date, party, and identity fields; they do not fabricate sale dates. Read the [category guide](/guides/foreclosure-categories) for counting and reconciliation rules.
+
 ---
 
 ## Errors and retries
@@ -233,6 +255,7 @@ Handle authentication, validation, quota, and service errors.
 | 400 | Invalid or missing parameters | Check location filters, source ID, dates, and page size. |
 | 401 | Missing or invalid API key | Check the `x-api-key` header and active key. |
 | 403 | Plan, license, trial, or row allowance restriction | Check the error code and dashboard usage. |
+| 413 | Prepared response exceeds the byte limit | Request fewer rows or narrower filters. |
 | 404 | Unknown API endpoint | Verify the endpoint path. Empty queries normally return a successful empty result. |
 | 429 | Request rate limit | Respect `Retry-After` before retrying. |
 | 500 / 503 | Service failure or temporary unavailability | Retry cautiously with backoff; retain `X-Request-ID` for support. |
@@ -244,6 +267,56 @@ Handle authentication, validation, quota, and service errors.
 For `EXPORT_QUOTA_EXCEEDED`, request fewer rows or wait for the stated reset. Do not repeatedly retry an unchanged oversized request. Each new property request can consume rows again if the previous response was prepared but delivery could not be confirmed.
 
 Contact [support](https://www.foreclosuredatahub.com/contact) with the request ID and endpoint. Do not send your API key.
+
+New category endpoints return `400` for unknown or repeated scalar parameters, incompatible filters, invalid states/dates, reversed ranges, or unsupported pagination. An unavailable category reader returns `503`; a successful query with no matches returns `200` and an empty result.
+
+---
+
+## Choose a foreclosure data category
+
+Source: https://www.foreclosuredatahub.com/docs/guides/foreclosure-categories
+
+Choose between trustee sales, sheriff sales, tax sales, tax delinquency, and early filings, with clear date, identity, coverage, and counting rules.
+
+Choose a Foreclosure Data Hub category that matches the records you need. Sale listings, delinquent tax accounts, and recorded filing events represent different stages and use different dates and counting units.
+
+| Category | Search | Counting unit |
+| --- | --- | --- |
+| Trustee Sales | [Trustee search](/api-reference/trustee-sales/search) | Sale listings |
+| Sheriff Sales | [Sheriff search](/api-reference/sheriff-sales/search) | Sale listings |
+| Tax Sales | [Tax sale search](/api-reference/tax-sales/search) | Sale lots, potentially containing several parcels |
+| Tax Delinquency | [Delinquency search](/api-reference/tax-delinquent/search) | Published property/account records |
+| Early Filings | [Filing search](/api-reference/filings/search) | Eligible proceeding and parcel groups |
+
+Each category has `/search` and `/counts` endpoints under `/api/v1`. Searches return `data.records` and `meta`; counts return `data.total`, `data.category`, and `data.unit`. They use the same API keys, rate limits, and applicable row allowances as the existing property endpoints.
+
+## Dates and statuses
+
+Trustee and sheriff filters use sale dates. Trustee searches default to all dates and statuses; `sale_status=trustee-upcoming` selects qualified upcoming sales.
+
+Tax Sales supports `tax_deed`, `redeemable_deed`, and `tax_lien_certificate`. Its default `tax_status=all` includes published available inventory without a scheduled auction. Use `tax_status=upcoming` for qualified upcoming sales. Tax-sale time zones and local sale-day calculations are returned separately. Missing sale dates or minimum bids do not satisfy date or bid ranges.
+
+Tax Delinquency has a `source_as_of` date and collection/expiry timestamps. The published balance can be principal or a delinquent total; read `amount_kind` before comparing amounts. Delinquency alone does not establish a scheduled sale.
+
+Early Filings uses `recorded_from` and `recorded_to` against `record_date`. Filing types include mortgage, HOA, and tax/government candidates. A candidate classification does not establish a completed foreclosure. Recorded grantors and grantees are not automatically current owners. `state` describes the filing jurisdiction; `situs_state` describes the matched property.
+
+## Identity and counting
+
+Retain `source` and `row_id` for every delivered record. These identify category records, not globally unique parcels. Tax lots can bundle parcels. Filings group eligible events by proceeding and parcel; their stable `row_id` can remain the same when a different event represents the group. `event_id`, `proceeding_id`, `parcel_id`, and `event_count` describe the filing result.
+
+Do not add category totals and label the sum unique properties. One property can appear in more than one category or sale event. Counts and pages can change between requests as source inventory changes.
+
+## Coverage and freshness
+
+Use [List sources](/api-reference/list-sources) with a `category` to discover coverage and supported filters. Trustee, sheriff, and tax-sale discovery describes configured coverage, not current inventory or complete county coverage. Delinquency discovery reports published source metadata. Filing discovery includes only sources represented in eligible current inventory.
+
+A valid query with no matching records returns `200` with an empty list and zero total. A reader that cannot establish availability returns `503`. Expired, held, or privacy-suppressed records remain subject to the category's publication rules. An unavailable or missing listing does not imply that a sale completed or a delinquent balance was paid.
+
+## Compatibility
+
+The existing `/properties/search`, `/properties/data`, `/properties/counts`, and unfiltered `/sources` responses retain their behavior. The existing `pre_foreclosure=true` filter still selects scheduled-sale preforeclosures and does not include early filings without a known sale date.
+
+New category searches return normalized records automatically, support browsing without a location filter, and reject unsupported filters. Sale searches accept repeated state, county, ZIP, and address filters. Delinquency and filing filters are scalar. Source IDs in category discovery describe that category; they are not automatically valid inputs to the legacy `/properties/data` endpoint. Only filing search currently accepts a category `source` filter.
 
 ---
 
@@ -268,6 +341,8 @@ In unified mode, `sale_days` adds minimum lead time of 1–365 days. It combines
 
 Use `sale_status` to narrow canonical status groups in unified mode. Scheduled sale dates can change; check the record's latest status and source evidence before acting on a listing.
 
+For records before a known sale date, use [Early Filings](/api-reference/filings/search). For published overdue property taxes, use [Tax Delinquency](/api-reference/tax-delinquent/search). These categories have separate date and counting semantics.
+
 ---
 
 ## Pagination and filtering
@@ -278,6 +353,7 @@ Retrieve bounded pages without exhausting your allowance.
 
 | Mode | Page | Page size | Response rows |
 | --- | --- | --- | --- |
+| Category search | `page` | `page_size` | `data.records` |
 | Unified search | `page` | `page_size` | `data.records` |
 | Single source | `page` | `per_page` | `data` |
 | Grouped search | No page parameter | `limit` | `data.results[].records` |
@@ -286,9 +362,14 @@ Page numbering starts at 1. Use `meta.total_pages` to stop paginated requests. G
 
 Retail paid responses allow up to 100 rows, defaulting to 25; new trials allow up to 10. Use a smaller explicit size when your remaining allowance is low. Commercial response limits depend on license status.
 
-Search accepts repeated location parameters, such as `county=Cook&county=Lake`. At least one location filter is required. Source-data filters apply only when supported by the chosen source; discover support with [List sources](/api-reference/list-sources).
+Legacy property search and category sale searches accept repeated location parameters, such as `county=Cook&county=Lake`. Legacy property search requires at least one location filter. New category searches allow paginated browsing without a location filter; delinquency and filing filters cannot be repeated. Source-data filters apply only when supported by the chosen source; discover support with [List sources](/api-reference/list-sources).
 
 The `limit` alias can also bound paginated requests. If you supply it together with `page_size` or `per_page`, use matching values; conflicting limits return `400`.
+
+
+Category searches reject unknown parameters and repeated scalar values. `page` is limited to 100,000. Tax delinquency also limits starting offsets to 500,000, including the second block in pages larger than 50 rows. Narrow filters for deeper result sets. Keep the same explicit page size while paging; inventory changes can still move records between pages.
+
+Category `/counts` endpoints use the search filters but reject `page`, `page_size`, and `limit`. They consume requests without consuming delivered rows.
 
 ---
 
@@ -316,7 +397,24 @@ List all available data sources with their coverage and supported filters. cover
 
 ## Parameters
 
-This endpoint has no query parameters.
+| Parameter | Meaning |
+| --- | --- |
+| `category` | Optional: `trustee-sales`, `sheriff-sales`, `tax-sales`, `tax-delinquent`, or `filings`. Omit for the original property feed catalog. |
+
+When using `category`, supply it once and do not add other parameters. The response remains a `data` array. Category entries add `category`, `coverage_basis`, and supported filter names. Some include county metadata or source dates.
+
+- `configured`: The source/category is configured for these states or counties. This does not promise current inventory or complete coverage.
+- `published`: Delinquency source metadata, including `available` and source/capture/expiry dates when supplied.
+- `current_inventory`: Filing sources represented by currently eligible property records.
+
+Tax and sheriff sales each expose an aggregate inventory ID (`tax_sales` and `sheriff_sales`). Trustee feeds retain their numbered IDs. Delinquency and filings use their source keys. These category IDs do not expand the legacy `/properties/data` source catalog.
+
+```bash
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/sources?category=tax-sales"
+```
+
+See [category semantics](/guides/foreclosure-categories) before interpreting coverage or totals.
 
 ## Examples
 
@@ -725,3 +823,854 @@ Illustrative response; `...` represents omitted fields or records.
 ```
 
 See [response fields](/concepts/responses), [quotas](/concepts/rate-limits), and [error handling](/concepts/errors).
+
+---
+
+## Search trustee sales
+
+Source: https://www.foreclosuredatahub.com/docs/api-reference/trustee-sales/search
+
+Find trustee sales with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+
+Trustee Sales returns the classified dashboard inventory. Omit sale_status for all dates and statuses; use trustee-upcoming for qualified upcoming sales. The nullable trustee_status, trustee_today and trustee_upcoming fields are populated when supplied by the selected status projection.
+
+Results are normalized automatically in `data.records`. No `mode=unified` or location filter is required. Each returned row consumes the applicable delivered-row allowance.
+
+## Parameters
+
+Unknown parameters and repeated scalar parameters return `400`. Date and numeric ranges must run from lower to higher values.
+
+| Parameter | Meaning |
+| --- | --- |
+| `state` | US state name or abbreviation. Repeat for multiple values, at most 50. |
+| `county` | Partial county name. Repeat for multiple values, at most 50. |
+| `zip` | Property ZIP prefix. Repeat for multiple values, at most 50. |
+| `address` | Partial property address. Repeat for multiple values, at most 50. |
+| `sale_date_start` | Inclusive sale date start, YYYY-MM-DD. |
+| `sale_date_end` | Inclusive sale date end, YYYY-MM-DD. |
+| `sale_days` | Minimum sale lead time, 1 to 365 days. Tax sales require a known date and use local sale days. Trustee and sheriff searches retain undated rows unless another date filter excludes them. |
+| `sale_status` | Canonical status group, including trustee-upcoming, trustee-active and trustee-unconfirmed. Omit for all trustee statuses and dates. |
+| `owner_name` | Partial published owner name. |
+| `est_value_min` | Minimum estimated value. |
+| `est_value_max` | Maximum estimated value. |
+| `pre_foreclosure` | Scheduled-sale preforeclosure filter; does not search early filing events. |
+| `page` | Page number, starting at 1. Keep page_size fixed while paging. |
+| `page_size` | Rows per page: 1 to 100 paid, 1 to 10 trial. Defaults to 25 paid or 10 trial. An omitted first-page size may shrink to the remaining allowance. |
+| `limit` | Alias for page_size; values must match when both are supplied. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/trustee-sales/search?state=CA&sale_status=trustee-upcoming&page_size=5"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://www.foreclosuredatahub.com/api/v1/trustee-sales/search?state=CA&sale_status=trustee-upcoming&page_size=5",
+  { headers: { "x-api-key": process.env.FDH_API_KEY } }
+);
+if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+const result = await response.json();
+```
+
+```python Python
+import os
+import requests
+
+response = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/trustee-sales/search?state=CA&sale_status=trustee-upcoming&page_size=5",
+    headers={"x-api-key": os.environ["FDH_API_KEY"]},
+    timeout=60,
+)
+response.raise_for_status()
+result = response.json()
+```
+
+</CodeGroup>
+
+## Response
+
+The OpenAPI response panel includes a synthetic record example and an empty result. Example identities and property details are illustrative.
+
+A query can succeed with no matching records. This valid empty example does not indicate unavailable inventory:
+
+```json
+{
+  "data": {
+    "records": []
+  },
+  "meta": {
+    "category": "trustee-sales",
+    "unit": "sale_listings",
+    "total": 0,
+    "page": 1,
+    "per_page": 5,
+    "total_pages": 0
+  }
+}
+```
+
+Records follow the `TrusteeSale` schema in the OpenAPI reference. Retain `source` and `row_id` for reconciliation. Use [matching counts](/api-reference/trustee-sales/counts) to check result size. Inventory can change between requests. When the reader reports unavailable data, the API returns `503` instead of a successful empty result.
+
+See [category semantics](/guides/foreclosure-categories), [source discovery](/api-reference/list-sources), [pagination](/guides/pagination), and [allowances](/concepts/rate-limits).
+
+---
+
+## Count trustee sales
+
+Source: https://www.foreclosuredatahub.com/docs/api-reference/trustee-sales/counts
+
+Count trustee sales with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+
+Use Foreclosure Data Hub to count matching trustee sales before retrieving a page. Counts use the search filters and eligibility rules, with a `sale_listings` unit.
+
+This endpoint consumes an API request but no delivered rows. Its total counts category records, not distinct properties across categories. Pagination parameters are not accepted.
+
+## Parameters
+
+Unknown parameters and repeated scalar parameters return `400`. Date and numeric ranges must run from lower to higher values.
+
+| Parameter | Meaning |
+| --- | --- |
+| `state` | US state name or abbreviation. Repeat for multiple values, at most 50. |
+| `county` | Partial county name. Repeat for multiple values, at most 50. |
+| `zip` | Property ZIP prefix. Repeat for multiple values, at most 50. |
+| `address` | Partial property address. Repeat for multiple values, at most 50. |
+| `sale_date_start` | Inclusive sale date start, YYYY-MM-DD. |
+| `sale_date_end` | Inclusive sale date end, YYYY-MM-DD. |
+| `sale_days` | Minimum sale lead time, 1 to 365 days. Tax sales require a known date and use local sale days. Trustee and sheriff searches retain undated rows unless another date filter excludes them. |
+| `sale_status` | Canonical status group, including trustee-upcoming, trustee-active and trustee-unconfirmed. Omit for all trustee statuses and dates. |
+| `owner_name` | Partial published owner name. |
+| `est_value_min` | Minimum estimated value. |
+| `est_value_max` | Maximum estimated value. |
+| `pre_foreclosure` | Scheduled-sale preforeclosure filter; does not search early filing events. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/trustee-sales/counts?state=CA&sale_status=trustee-upcoming"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://www.foreclosuredatahub.com/api/v1/trustee-sales/counts?state=CA&sale_status=trustee-upcoming",
+  { headers: { "x-api-key": process.env.FDH_API_KEY } }
+);
+if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+const result = await response.json();
+```
+
+```python Python
+import os
+import requests
+
+response = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/trustee-sales/counts?state=CA&sale_status=trustee-upcoming",
+    headers={"x-api-key": os.environ["FDH_API_KEY"]},
+    timeout=60,
+)
+response.raise_for_status()
+result = response.json()
+```
+
+</CodeGroup>
+
+## Response
+
+A query can succeed with no matching records. This valid empty example does not indicate unavailable inventory:
+
+```json
+{
+  "data": {
+    "category": "trustee-sales",
+    "unit": "sale_listings",
+    "total": 0
+  }
+}
+```
+
+`total` matches the search total for identical filters against the same inventory. Retrieve [matching records](/api-reference/trustee-sales/search). Inventory can change between requests. When the reader reports unavailable data, the API returns `503` instead of a successful empty result.
+
+See [category semantics](/guides/foreclosure-categories), [source discovery](/api-reference/list-sources), [pagination](/guides/pagination), and [allowances](/concepts/rate-limits).
+
+---
+
+## Search sheriff sales
+
+Source: https://www.foreclosuredatahub.com/docs/api-reference/sheriff-sales/search
+
+Find sheriff sales with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+
+Sheriff Sales returns qualified sheriff-administered mortgage sale listings, preserving authority and legal basis. Customer-facing scheduled statuses are returned as Scheduled. Owner, valuation and generic sale-status filters are unsupported.
+
+Results are normalized automatically in `data.records`. No `mode=unified` or location filter is required. Each returned row consumes the applicable delivered-row allowance.
+
+## Parameters
+
+Unknown parameters and repeated scalar parameters return `400`. Date and numeric ranges must run from lower to higher values.
+
+| Parameter | Meaning |
+| --- | --- |
+| `state` | US state name or abbreviation. Repeat for multiple values, at most 50. |
+| `county` | Partial county name. Repeat for multiple values, at most 50. |
+| `zip` | Property ZIP prefix. Repeat for multiple values, at most 50. |
+| `address` | Partial property address. Repeat for multiple values, at most 50. |
+| `sale_date_start` | Inclusive sale date start, YYYY-MM-DD. |
+| `sale_date_end` | Inclusive sale date end, YYYY-MM-DD. |
+| `sale_days` | Minimum sale lead time, 1 to 365 days. Tax sales require a known date and use local sale days. Trustee and sheriff searches retain undated rows unless another date filter excludes them. |
+| `q` | Search parcel, case, writ, or auction identifiers. |
+| `page` | Page number, starting at 1. Keep page_size fixed while paging. |
+| `page_size` | Rows per page: 1 to 100 paid, 1 to 10 trial. Defaults to 25 paid or 10 trial. An omitted first-page size may shrink to the remaining allowance. |
+| `limit` | Alias for page_size; values must match when both are supplied. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/sheriff-sales/search?state=PA&county=Philadelphia&page_size=5"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://www.foreclosuredatahub.com/api/v1/sheriff-sales/search?state=PA&county=Philadelphia&page_size=5",
+  { headers: { "x-api-key": process.env.FDH_API_KEY } }
+);
+if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+const result = await response.json();
+```
+
+```python Python
+import os
+import requests
+
+response = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/sheriff-sales/search?state=PA&county=Philadelphia&page_size=5",
+    headers={"x-api-key": os.environ["FDH_API_KEY"]},
+    timeout=60,
+)
+response.raise_for_status()
+result = response.json()
+```
+
+</CodeGroup>
+
+## Response
+
+The OpenAPI response panel includes a synthetic record example and an empty result. Example identities and property details are illustrative.
+
+A query can succeed with no matching records. This valid empty example does not indicate unavailable inventory:
+
+```json
+{
+  "data": {
+    "records": []
+  },
+  "meta": {
+    "category": "sheriff-sales",
+    "unit": "sale_listings",
+    "total": 0,
+    "page": 1,
+    "per_page": 5,
+    "total_pages": 0
+  }
+}
+```
+
+Records follow the `SheriffSale` schema in the OpenAPI reference. Retain `source` and `row_id` for reconciliation. Use [matching counts](/api-reference/sheriff-sales/counts) to check result size. Inventory can change between requests. When the reader reports unavailable data, the API returns `503` instead of a successful empty result.
+
+See [category semantics](/guides/foreclosure-categories), [source discovery](/api-reference/list-sources), [pagination](/guides/pagination), and [allowances](/concepts/rate-limits).
+
+---
+
+## Count sheriff sales
+
+Source: https://www.foreclosuredatahub.com/docs/api-reference/sheriff-sales/counts
+
+Count sheriff sales with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+
+Use Foreclosure Data Hub to count matching sheriff sales before retrieving a page. Counts use the search filters and eligibility rules, with a `sale_listings` unit.
+
+This endpoint consumes an API request but no delivered rows. Its total counts category records, not distinct properties across categories. Pagination parameters are not accepted.
+
+## Parameters
+
+Unknown parameters and repeated scalar parameters return `400`. Date and numeric ranges must run from lower to higher values.
+
+| Parameter | Meaning |
+| --- | --- |
+| `state` | US state name or abbreviation. Repeat for multiple values, at most 50. |
+| `county` | Partial county name. Repeat for multiple values, at most 50. |
+| `zip` | Property ZIP prefix. Repeat for multiple values, at most 50. |
+| `address` | Partial property address. Repeat for multiple values, at most 50. |
+| `sale_date_start` | Inclusive sale date start, YYYY-MM-DD. |
+| `sale_date_end` | Inclusive sale date end, YYYY-MM-DD. |
+| `sale_days` | Minimum sale lead time, 1 to 365 days. Tax sales require a known date and use local sale days. Trustee and sheriff searches retain undated rows unless another date filter excludes them. |
+| `q` | Search parcel, case, writ, or auction identifiers. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/sheriff-sales/counts?state=PA&county=Philadelphia"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://www.foreclosuredatahub.com/api/v1/sheriff-sales/counts?state=PA&county=Philadelphia",
+  { headers: { "x-api-key": process.env.FDH_API_KEY } }
+);
+if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+const result = await response.json();
+```
+
+```python Python
+import os
+import requests
+
+response = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/sheriff-sales/counts?state=PA&county=Philadelphia",
+    headers={"x-api-key": os.environ["FDH_API_KEY"]},
+    timeout=60,
+)
+response.raise_for_status()
+result = response.json()
+```
+
+</CodeGroup>
+
+## Response
+
+A query can succeed with no matching records. This valid empty example does not indicate unavailable inventory:
+
+```json
+{
+  "data": {
+    "category": "sheriff-sales",
+    "unit": "sale_listings",
+    "total": 0
+  }
+}
+```
+
+`total` matches the search total for identical filters against the same inventory. Retrieve [matching records](/api-reference/sheriff-sales/search). Inventory can change between requests. When the reader reports unavailable data, the API returns `503` instead of a successful empty result.
+
+See [category semantics](/guides/foreclosure-categories), [source discovery](/api-reference/list-sources), [pagination](/guides/pagination), and [allowances](/concepts/rate-limits).
+
+---
+
+## Search tax sales
+
+Source: https://www.foreclosuredatahub.com/docs/api-reference/tax-sales/search
+
+Find tax sales with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+
+Tax Sales includes tax deeds, redeemable deeds, tax lien certificates and published available inventory. A row is a sale lot and may contain several parcels. The default tax_status=all includes undated available records. Date filters exclude undated records; missing bids do not match bid ranges.
+
+Results are normalized automatically in `data.records`. No `mode=unified` or location filter is required. Each returned row consumes the applicable delivered-row allowance.
+
+## Parameters
+
+Unknown parameters and repeated scalar parameters return `400`. Date and numeric ranges must run from lower to higher values.
+
+| Parameter | Meaning |
+| --- | --- |
+| `state` | US state name or abbreviation. Repeat for multiple values, at most 50. |
+| `county` | Partial county name. Repeat for multiple values, at most 50. |
+| `zip` | Property ZIP prefix. Repeat for multiple values, at most 50. |
+| `address` | Partial property address. Repeat for multiple values, at most 50. |
+| `sale_date_start` | Inclusive sale date start, YYYY-MM-DD. |
+| `sale_date_end` | Inclusive sale date end, YYYY-MM-DD. |
+| `sale_days` | Minimum sale lead time, 1 to 365 days. Tax sales require a known date and use local sale days. Trustee and sheriff searches retain undated rows unless another date filter excludes them. |
+| `owner_name` | Partial published owner name. |
+| `tax_sale_type` | Type of tax sale or interest. |
+| `tax_status` | all includes undated available inventory; upcoming selects qualified upcoming sales. |
+| `minimum_bid_min` | Minimum published minimum bid; unknown bids do not match. |
+| `minimum_bid_max` | Maximum published minimum bid; unknown bids do not match. |
+| `q` | Search parcel and case identifiers. |
+| `page` | Page number, starting at 1. Keep page_size fixed while paging. |
+| `page_size` | Rows per page: 1 to 100 paid, 1 to 10 trial. Defaults to 25 paid or 10 trial. An omitted first-page size may shrink to the remaining allowance. |
+| `limit` | Alias for page_size; values must match when both are supplied. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/tax-sales/search?state=SC&tax_status=all&page_size=5"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://www.foreclosuredatahub.com/api/v1/tax-sales/search?state=SC&tax_status=all&page_size=5",
+  { headers: { "x-api-key": process.env.FDH_API_KEY } }
+);
+if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+const result = await response.json();
+```
+
+```python Python
+import os
+import requests
+
+response = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/tax-sales/search?state=SC&tax_status=all&page_size=5",
+    headers={"x-api-key": os.environ["FDH_API_KEY"]},
+    timeout=60,
+)
+response.raise_for_status()
+result = response.json()
+```
+
+</CodeGroup>
+
+## Response
+
+The OpenAPI response panel includes a synthetic record example and an empty result. Example identities and property details are illustrative.
+
+A query can succeed with no matching records. This valid empty example does not indicate unavailable inventory:
+
+```json
+{
+  "data": {
+    "records": []
+  },
+  "meta": {
+    "category": "tax-sales",
+    "unit": "sale_lots",
+    "total": 0,
+    "page": 1,
+    "per_page": 5,
+    "total_pages": 0
+  }
+}
+```
+
+Records follow the `TaxSale` schema in the OpenAPI reference. Retain `source` and `row_id` for reconciliation. Use [matching counts](/api-reference/tax-sales/counts) to check result size. Inventory can change between requests. When the reader reports unavailable data, the API returns `503` instead of a successful empty result.
+
+See [category semantics](/guides/foreclosure-categories), [source discovery](/api-reference/list-sources), [pagination](/guides/pagination), and [allowances](/concepts/rate-limits).
+
+---
+
+## Count tax sales
+
+Source: https://www.foreclosuredatahub.com/docs/api-reference/tax-sales/counts
+
+Count tax sales with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+
+Use Foreclosure Data Hub to count matching tax sales before retrieving a page. Counts use the search filters and eligibility rules, with a `sale_lots` unit.
+
+This endpoint consumes an API request but no delivered rows. Its total counts category records, not distinct properties across categories. Pagination parameters are not accepted.
+
+## Parameters
+
+Unknown parameters and repeated scalar parameters return `400`. Date and numeric ranges must run from lower to higher values.
+
+| Parameter | Meaning |
+| --- | --- |
+| `state` | US state name or abbreviation. Repeat for multiple values, at most 50. |
+| `county` | Partial county name. Repeat for multiple values, at most 50. |
+| `zip` | Property ZIP prefix. Repeat for multiple values, at most 50. |
+| `address` | Partial property address. Repeat for multiple values, at most 50. |
+| `sale_date_start` | Inclusive sale date start, YYYY-MM-DD. |
+| `sale_date_end` | Inclusive sale date end, YYYY-MM-DD. |
+| `sale_days` | Minimum sale lead time, 1 to 365 days. Tax sales require a known date and use local sale days. Trustee and sheriff searches retain undated rows unless another date filter excludes them. |
+| `owner_name` | Partial published owner name. |
+| `tax_sale_type` | Type of tax sale or interest. |
+| `tax_status` | all includes undated available inventory; upcoming selects qualified upcoming sales. |
+| `minimum_bid_min` | Minimum published minimum bid; unknown bids do not match. |
+| `minimum_bid_max` | Maximum published minimum bid; unknown bids do not match. |
+| `q` | Search parcel and case identifiers. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/tax-sales/counts?state=SC&tax_status=all"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://www.foreclosuredatahub.com/api/v1/tax-sales/counts?state=SC&tax_status=all",
+  { headers: { "x-api-key": process.env.FDH_API_KEY } }
+);
+if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+const result = await response.json();
+```
+
+```python Python
+import os
+import requests
+
+response = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/tax-sales/counts?state=SC&tax_status=all",
+    headers={"x-api-key": os.environ["FDH_API_KEY"]},
+    timeout=60,
+)
+response.raise_for_status()
+result = response.json()
+```
+
+</CodeGroup>
+
+## Response
+
+A query can succeed with no matching records. This valid empty example does not indicate unavailable inventory:
+
+```json
+{
+  "data": {
+    "category": "tax-sales",
+    "unit": "sale_lots",
+    "total": 0
+  }
+}
+```
+
+`total` matches the search total for identical filters against the same inventory. Retrieve [matching records](/api-reference/tax-sales/search). Inventory can change between requests. When the reader reports unavailable data, the API returns `503` instead of a successful empty result.
+
+See [category semantics](/guides/foreclosure-categories), [source discovery](/api-reference/list-sources), [pagination](/guides/pagination), and [allowances](/concepts/rate-limits).
+
+---
+
+## Search tax delinquency
+
+Source: https://www.foreclosuredatahub.com/docs/api-reference/tax-delinquent/search
+
+Find tax delinquency with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+
+Tax Delinquency returns published delinquent property/account records. Read amount_kind with reported_balance; published_total is separate and nullable. These records do not imply an auction date. Starting offsets are limited to 500,000, including the second block of pages larger than 50 rows.
+
+Results are normalized automatically in `data.records`. No `mode=unified` or location filter is required. Each returned row consumes the applicable delivered-row allowance.
+
+## Parameters
+
+Unknown parameters and repeated scalar parameters return `400`. Date and numeric ranges must run from lower to higher values.
+
+| Parameter | Meaning |
+| --- | --- |
+| `state` | US state name or abbreviation. |
+| `county` | Exact county name, case-insensitive. |
+| `field` | Delinquency field searched by q. Parcel also searches account aliases. |
+| `q` | Search the selected field; parcel also searches account aliases. |
+| `minimum` | Minimum reported delinquent balance. |
+| `maximum` | Maximum reported delinquent balance. |
+| `page` | Page number, starting at 1. Keep page_size fixed while paging. |
+| `page_size` | Rows per page: 1 to 100 paid, 1 to 10 trial. Defaults to 25 paid or 10 trial. An omitted first-page size may shrink to the remaining allowance. |
+| `limit` | Alias for page_size; values must match when both are supplied. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/tax-delinquent/search?state=TX&field=owner&q=Example&page_size=5"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://www.foreclosuredatahub.com/api/v1/tax-delinquent/search?state=TX&field=owner&q=Example&page_size=5",
+  { headers: { "x-api-key": process.env.FDH_API_KEY } }
+);
+if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+const result = await response.json();
+```
+
+```python Python
+import os
+import requests
+
+response = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/tax-delinquent/search?state=TX&field=owner&q=Example&page_size=5",
+    headers={"x-api-key": os.environ["FDH_API_KEY"]},
+    timeout=60,
+)
+response.raise_for_status()
+result = response.json()
+```
+
+</CodeGroup>
+
+## Response
+
+The OpenAPI response panel includes a synthetic record example and an empty result. Example identities and property details are illustrative.
+
+A query can succeed with no matching records. This valid empty example does not indicate unavailable inventory:
+
+```json
+{
+  "data": {
+    "records": []
+  },
+  "meta": {
+    "category": "tax-delinquent",
+    "unit": "properties",
+    "total": 0,
+    "page": 1,
+    "per_page": 5,
+    "total_pages": 0
+  }
+}
+```
+
+Records follow the `TaxDelinquentProperty` schema in the OpenAPI reference. Retain `source` and `row_id` for reconciliation. Use [matching counts](/api-reference/tax-delinquent/counts) to check result size. Inventory can change between requests. When the reader reports unavailable data, the API returns `503` instead of a successful empty result.
+
+See [category semantics](/guides/foreclosure-categories), [source discovery](/api-reference/list-sources), [pagination](/guides/pagination), and [allowances](/concepts/rate-limits).
+
+---
+
+## Count tax delinquency
+
+Source: https://www.foreclosuredatahub.com/docs/api-reference/tax-delinquent/counts
+
+Count tax delinquency with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+
+Use Foreclosure Data Hub to count matching tax delinquency before retrieving a page. Counts use the search filters and eligibility rules, with a `properties` unit.
+
+This endpoint consumes an API request but no delivered rows. Its total counts category records, not distinct properties across categories. Pagination parameters are not accepted.
+
+## Parameters
+
+Unknown parameters and repeated scalar parameters return `400`. Date and numeric ranges must run from lower to higher values.
+
+| Parameter | Meaning |
+| --- | --- |
+| `state` | US state name or abbreviation. |
+| `county` | Exact county name, case-insensitive. |
+| `field` | Delinquency field searched by q. Parcel also searches account aliases. |
+| `q` | Search the selected field; parcel also searches account aliases. |
+| `minimum` | Minimum reported delinquent balance. |
+| `maximum` | Maximum reported delinquent balance. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/tax-delinquent/counts?state=TX&field=owner&q=Example"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://www.foreclosuredatahub.com/api/v1/tax-delinquent/counts?state=TX&field=owner&q=Example",
+  { headers: { "x-api-key": process.env.FDH_API_KEY } }
+);
+if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+const result = await response.json();
+```
+
+```python Python
+import os
+import requests
+
+response = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/tax-delinquent/counts?state=TX&field=owner&q=Example",
+    headers={"x-api-key": os.environ["FDH_API_KEY"]},
+    timeout=60,
+)
+response.raise_for_status()
+result = response.json()
+```
+
+</CodeGroup>
+
+## Response
+
+A query can succeed with no matching records. This valid empty example does not indicate unavailable inventory:
+
+```json
+{
+  "data": {
+    "category": "tax-delinquent",
+    "unit": "properties",
+    "total": 0
+  }
+}
+```
+
+`total` matches the search total for identical filters against the same inventory. Retrieve [matching records](/api-reference/tax-delinquent/search). Inventory can change between requests. When the reader reports unavailable data, the API returns `503` instead of a successful empty result.
+
+See [category semantics](/guides/foreclosure-categories), [source discovery](/api-reference/list-sources), [pagination](/guides/pagination), and [allowances](/concepts/rate-limits).
+
+---
+
+## Search early filings
+
+Source: https://www.foreclosuredatahub.com/docs/api-reference/filings/search
+
+Find early filings with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+
+Early Filings returns eligible matched properties grouped by proceeding and parcel. It includes recording dates, document references, classifications and recorded parties. state filters filing jurisdiction; situs_state describes the matched property. Internal review and unresolved-match data are excluded.
+
+Results are normalized automatically in `data.records`. No `mode=unified` or location filter is required. Each returned row consumes the applicable delivered-row allowance.
+
+## Parameters
+
+Unknown parameters and repeated scalar parameters return `400`. Date and numeric ranges must run from lower to higher values.
+
+| Parameter | Meaning |
+| --- | --- |
+| `state` | Filing jurisdiction as a US state name or abbreviation. |
+| `county` | Partial county name or qualified county key such as FL:Duval. |
+| `source` | Filing source ID from /sources?category=filings. |
+| `q` | Search instrument, case, address, legal text, and recorded parties. |
+| `recorded_from` | Inclusive recording date start, YYYY-MM-DD. |
+| `recorded_to` | Inclusive recording date end, YYYY-MM-DD. |
+| `event_type` | Recorded event type; results remain eligible property groups. |
+| `filing_kind` | Filing classification; a candidate does not establish a completed foreclosure. |
+| `has_case` | Require a reported case number. |
+| `page` | Page number, starting at 1. Keep page_size fixed while paging. |
+| `page_size` | Rows per page: 1 to 100 paid, 1 to 10 trial. Defaults to 25 paid or 10 trial. An omitted first-page size may shrink to the remaining allowance. |
+| `limit` | Alias for page_size; values must match when both are supplied. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/filings/search?state=FL&recorded_from=2026-10-01&page_size=5"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://www.foreclosuredatahub.com/api/v1/filings/search?state=FL&recorded_from=2026-10-01&page_size=5",
+  { headers: { "x-api-key": process.env.FDH_API_KEY } }
+);
+if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+const result = await response.json();
+```
+
+```python Python
+import os
+import requests
+
+response = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/filings/search?state=FL&recorded_from=2026-10-01&page_size=5",
+    headers={"x-api-key": os.environ["FDH_API_KEY"]},
+    timeout=60,
+)
+response.raise_for_status()
+result = response.json()
+```
+
+</CodeGroup>
+
+## Response
+
+The OpenAPI response panel includes a synthetic record example and an empty result. Example identities and property details are illustrative.
+
+A query can succeed with no matching records. This valid empty example does not indicate unavailable inventory:
+
+```json
+{
+  "data": {
+    "records": []
+  },
+  "meta": {
+    "category": "filings",
+    "unit": "proceeding_parcels",
+    "total": 0,
+    "page": 1,
+    "per_page": 5,
+    "total_pages": 0
+  }
+}
+```
+
+Records follow the `FilingProperty` schema in the OpenAPI reference. Retain `source` and `row_id` for reconciliation. Use [matching counts](/api-reference/filings/counts) to check result size. Inventory can change between requests. When the reader reports unavailable data, the API returns `503` instead of a successful empty result.
+
+See [category semantics](/guides/foreclosure-categories), [source discovery](/api-reference/list-sources), [pagination](/guides/pagination), and [allowances](/concepts/rate-limits).
+
+---
+
+## Count early filings
+
+Source: https://www.foreclosuredatahub.com/docs/api-reference/filings/counts
+
+Count early filings with category-specific filters, explicit record units, and the API keys and allowances shared across Foreclosure Data Hub.
+
+Use Foreclosure Data Hub to count matching early filings before retrieving a page. Counts use the search filters and eligibility rules, with a `proceeding_parcels` unit.
+
+This endpoint consumes an API request but no delivered rows. Its total counts category records, not distinct properties across categories. Pagination parameters are not accepted.
+
+## Parameters
+
+Unknown parameters and repeated scalar parameters return `400`. Date and numeric ranges must run from lower to higher values.
+
+| Parameter | Meaning |
+| --- | --- |
+| `state` | Filing jurisdiction as a US state name or abbreviation. |
+| `county` | Partial county name or qualified county key such as FL:Duval. |
+| `source` | Filing source ID from /sources?category=filings. |
+| `q` | Search instrument, case, address, legal text, and recorded parties. |
+| `recorded_from` | Inclusive recording date start, YYYY-MM-DD. |
+| `recorded_to` | Inclusive recording date end, YYYY-MM-DD. |
+| `event_type` | Recorded event type; results remain eligible property groups. |
+| `filing_kind` | Filing classification; a candidate does not establish a completed foreclosure. |
+| `has_case` | Require a reported case number. |
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --fail-with-body -H "x-api-key: $FDH_API_KEY" \
+  "https://www.foreclosuredatahub.com/api/v1/filings/counts?state=FL&recorded_from=2026-10-01"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://www.foreclosuredatahub.com/api/v1/filings/counts?state=FL&recorded_from=2026-10-01",
+  { headers: { "x-api-key": process.env.FDH_API_KEY } }
+);
+if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+const result = await response.json();
+```
+
+```python Python
+import os
+import requests
+
+response = requests.get(
+    "https://www.foreclosuredatahub.com/api/v1/filings/counts?state=FL&recorded_from=2026-10-01",
+    headers={"x-api-key": os.environ["FDH_API_KEY"]},
+    timeout=60,
+)
+response.raise_for_status()
+result = response.json()
+```
+
+</CodeGroup>
+
+## Response
+
+A query can succeed with no matching records. This valid empty example does not indicate unavailable inventory:
+
+```json
+{
+  "data": {
+    "category": "filings",
+    "unit": "proceeding_parcels",
+    "total": 0
+  }
+}
+```
+
+`total` matches the search total for identical filters against the same inventory. Retrieve [matching records](/api-reference/filings/search). Inventory can change between requests. When the reader reports unavailable data, the API returns `503` instead of a successful empty result.
+
+See [category semantics](/guides/foreclosure-categories), [source discovery](/api-reference/list-sources), [pagination](/guides/pagination), and [allowances](/concepts/rate-limits).
